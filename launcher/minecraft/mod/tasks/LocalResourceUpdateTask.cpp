@@ -26,8 +26,11 @@
 #include <windows.h>
 #endif
 
-LocalResourceUpdateTask::LocalResourceUpdateTask(QDir index_dir, ModPlatform::IndexedPack& project, ModPlatform::IndexedVersion& version)
-    : m_index_dir(index_dir), m_project(project), m_version(version)
+LocalResourceUpdateTask::LocalResourceUpdateTask(QDir index_dir,
+                                                 ModPlatform::IndexedPack& project,
+                                                 ModPlatform::IndexedVersion& version,
+                                                 bool lockUpdate)
+    : m_index_dir(index_dir), m_project(project), m_version(version), m_lockUpdate(lockUpdate)
 {
     // Ensure a '.index' folder exists in the mods folder, and create it if it does not
     if (!FS::ensureFolderPathExists(index_dir.path())) {
@@ -52,6 +55,7 @@ void LocalResourceUpdateTask::executeTask()
 
     auto pw_mod = Metadata::create(m_index_dir, m_project, m_version);
     if (pw_mod.isValid()) {
+        pw_mod.lockUpdate = m_lockUpdate;
         Metadata::update(m_index_dir, pw_mod);
         emitSucceeded();
     } else {

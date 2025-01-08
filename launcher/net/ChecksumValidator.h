@@ -72,7 +72,7 @@ class ChecksumValidator : public Validator {
     auto validate(QNetworkReply&) -> bool override
     {
         if (m_expected.size() && m_expected != hash()) {
-            qWarning() << "Checksum mismatch, download is bad.";
+            qCritical() << "Checksum mismatch, download is bad.";
             return false;
         }
         return true;

@@ -307,6 +307,7 @@ void VersionProxyModel::setSourceModel(QAbstractItemModel* replacingRaw)
     if (!replacing) {
         roles.clear();
         filterModel->setSourceModel(replacing);
+        endResetModel();
         return;
     }
 
