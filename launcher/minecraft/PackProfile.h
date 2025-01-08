@@ -62,6 +62,19 @@ class PackProfile : public QAbstractListModel {
    public:
     enum Columns { NameColumn = 0, VersionColumn, NUM_COLUMNS };
 
+    struct Result {
+        bool success;
+        QString error;
+
+        // Implicit conversion to bool
+        operator bool() const { return success; }
+
+        // Factory methods for convenience
+        static Result Success() { return { true, "" }; }
+
+        static Result Error(const QString& errorMessage) { return { false, errorMessage }; }
+    };
+
     explicit PackProfile(MinecraftInstance* instance);
     virtual ~PackProfile();
 
@@ -102,7 +115,7 @@ class PackProfile : public QAbstractListModel {
     bool revertToBase(int index);
 
     /// reload the list, reload all components, resolve dependencies
-    void reload(Net::Mode netmode);
+    Result reload(Net::Mode netmode);
 
     // reload all components, resolve dependencies
     void resolve(Net::Mode netmode);
@@ -169,7 +182,7 @@ class PackProfile : public QAbstractListModel {
     void disableInteraction(bool disable);
 
    private:
-    bool load();
+    Result load();
     bool installJarMods_internal(QStringList filepaths);
     bool installCustomJar_internal(QString filepath);
     bool installAgents_internal(QStringList filepaths);

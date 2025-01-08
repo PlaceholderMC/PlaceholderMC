@@ -8,7 +8,10 @@ void MinecraftLoadAndCheck::executeTask()
 {
     // add offline metadata load task
     auto components = m_inst->getPackProfile();
-    components->reload(m_netmode);
+    if (auto result = components->reload(m_netmode); !result) {
+        emitFailed(result.error);
+        return;
+    }
     m_task = components->getCurrentTask();
 
     if (!m_task) {

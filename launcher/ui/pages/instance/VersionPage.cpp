@@ -252,8 +252,11 @@ void VersionPage::updateButtons(int row)
 bool VersionPage::reloadPackProfile()
 {
     try {
-        m_profile->reload(Net::Mode::Online);
-        return true;
+        auto result = m_profile->reload(Net::Mode::Online);
+        if (!result) {
+            QMessageBox::critical(this, tr("Error"), result.error);
+        }
+        return result;
     } catch (const Exception& e) {
         QMessageBox::critical(this, tr("Error"), e.cause());
         return false;
