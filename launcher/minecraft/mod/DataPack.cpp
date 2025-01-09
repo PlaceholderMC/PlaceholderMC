@@ -124,6 +124,11 @@ int DataPack::compare(const Resource& other, SortType type) const
 
 bool DataPack::applyFilter(QRegularExpression filter) const
 {
+    bool earlyExit = false;
+    auto result = checkCategories(filter, earlyExit);
+    if (earlyExit) {
+        return result;
+    }
     if (filter.match(description()).hasMatch())
         return true;
 

@@ -16,6 +16,7 @@
 #include "Application.h"
 #include "FileSystem.h"
 
+#include "minecraft/mod/ModFolderModel.h"
 #include "minecraft/mod/tasks/ResourceFolderLoadTask.h"
 
 #include "Json.h"
@@ -491,6 +492,8 @@ QVariant ResourceFolderModel::data(const QModelIndex& index, int role) const
                     return m_resources[row]->provider();
                 case SizeColumn:
                     return m_resources[row]->sizeStr();
+                case CategoryColumn:
+                    return m_resources[row]->categories();
                 default:
                     return {};
             }
@@ -518,8 +521,12 @@ QVariant ResourceFolderModel::data(const QModelIndex& index, int role) const
         }
         case Qt::CheckStateRole:
             switch (column) {
-                case ActiveColumn:
+                case ActiveColumn: {
                     return m_resources[row]->enabled() ? Qt::Checked : Qt::Unchecked;
+                }
+                case LockUpdateCoumn: {
+                    return !at(row).lockUpdate() ? Qt::Checked : Qt::Unchecked;
+                }
                 default:
                     return {};
             }
@@ -535,6 +542,9 @@ bool ResourceFolderModel::setData(const QModelIndex& index, [[maybe_unused]] con
         return false;
 
     if (role == Qt::CheckStateRole) {
+        if (columnNames(false).at(index.column()) == "Update") {
+            return setResourceUpdate({ index }, EnableAction::TOGGLE);
+        }
         if (m_instance != nullptr && m_instance->isRunning()) {
             auto response =
                 CustomMessageBox::selectable(nullptr, tr("Confirm toggle"),
@@ -562,6 +572,8 @@ QVariant ResourceFolderModel::headerData(int section, [[maybe_unused]] Qt::Orien
                 case DateColumn:
                 case ProviderColumn:
                 case SizeColumn:
+                case CategoryColumn:
+                case LockUpdateCoumn:
                     return columnNames().at(section);
                 default:
                     return {};
@@ -579,6 +591,10 @@ QVariant ResourceFolderModel::headerData(int section, [[maybe_unused]] Qt::Orien
                     return tr("The source provider of the resource.");
                 case SizeColumn:
                     return tr("The size of the resource.");
+                case CategoryColumn:
+                    return tr("The categories of the resource.");
+                case LockUpdateCoumn:
+                    return tr("Should this resource be updated?");
                 default:
                     return {};
             }
@@ -844,4 +860,160 @@ QList<Resource*> ResourceFolderModel::selectedResources(const QModelIndexList& i
         result.append(&at(index.row()));
     }
     return result;
+}
+
+bool ResourceFolderModel::setResourceUpdate(const QModelIndexList& indexes, EnableAction action)
+{
+    if (indexes.isEmpty())
+        return true;
+
+    bool succeeded = true;
+    auto updateColumn = columnNames(false).indexOf("Update");
+    for (auto const& idx : indexes) {
+        if (!validateIndex(idx) || idx.column() != updateColumn)
+            continue;
+
+        int row = idx.row();
+        auto& resource = m_resources[row];
+
+        bool update = true;
+        switch (action) {
+            case EnableAction::ENABLE:
+                update = false;
+                break;
+            case EnableAction::DISABLE:
+                update = true;
+                break;
+            case EnableAction::TOGGLE:
+            default:
+                update = !resource->lockUpdate();
+                break;
+        }
+
+        if (resource->lockUpdate() == update) {
+            succeeded = false;
+            continue;
+        }
+
+        auto meta = resource->metadata();
+        if (meta) {
+            meta->lockUpdate = update;
+            Metadata::update(indexDir(), *meta.get());
+            resource->setMetadata(*meta.get());
+            emit dataChanged(index(row, updateColumn), index(row, columnCount(QModelIndex()) - 1));
+        }
+    }
+
+    return succeeded;
+}
+
+bool ResourceFolderModel::addResourceCategory(const QModelIndexList& indexes, QString category)
+{
+    if (indexes.isEmpty())
+        return true;
+
+    bool succeeded = true;
+    auto updateColumn = columnNames(false).indexOf("Update");
+    for (auto const& idx : indexes) {
+        if (!validateIndex(idx) || idx.column() != updateColumn)
+            continue;
+
+        int row = idx.row();
+        auto& resource = m_resources[row];
+
+        auto meta = resource->metadata();
+        if (!meta) {
+            continue;
+        }
+        if (meta->categories.contains(category)) {
+            succeeded = false;
+            continue;
+        }
+
+        meta->categories.append(category);
+        meta->categories.sort();
+        Metadata::update(indexDir(), *meta.get());
+        resource->setMetadata(*meta.get());
+        emit dataChanged(index(row, updateColumn), index(row, columnCount(QModelIndex()) - 1));
+    }
+
+    return succeeded;
+}
+
+bool ResourceFolderModel::removeResourceCategory(const QModelIndexList& indexes, QString category)
+{
+    if (indexes.isEmpty())
+        return true;
+
+    bool succeeded = true;
+    auto updateColumn = columnNames(false).indexOf("Update");
+    for (auto const& idx : indexes) {
+        if (!validateIndex(idx) || idx.column() != updateColumn)
+            continue;
+
+        int row = idx.row();
+        auto& resource = m_resources[row];
+
+        auto meta = resource->metadata();
+        if (!meta) {
+            continue;
+        }
+        if (!meta->categories.contains(category)) {
+            succeeded = false;
+            continue;
+        }
+
+        meta->categories.removeOne(category);
+        Metadata::update(indexDir(), *meta.get());
+        resource->setMetadata(*meta.get());
+        emit dataChanged(index(row, updateColumn), index(row, columnCount(QModelIndex()) - 1));
+    }
+
+    return succeeded;
+}
+
+bool ResourceFolderModel::removeAllResourceCategory(const QModelIndexList& indexes)
+{
+    if (indexes.isEmpty())
+        return true;
+
+    bool succeeded = true;
+    auto updateColumn = columnNames(false).indexOf("Update");
+    for (auto const& idx : indexes) {
+        if (!validateIndex(idx) || idx.column() != updateColumn)
+            continue;
+
+        int row = idx.row();
+        auto& resource = m_resources[row];
+
+        auto meta = resource->metadata();
+        if (!meta) {
+            continue;
+        }
+        if (meta->categories.isEmpty()) {
+            succeeded = false;
+            continue;
+        }
+
+        meta->categories.clear();
+        Metadata::update(indexDir(), *meta.get());
+        resource->setMetadata(*meta.get());
+        emit dataChanged(index(row, updateColumn), index(row, columnCount(QModelIndex()) - 1));
+    }
+
+    return succeeded;
+}
+
+QStringList ResourceFolderModel::categories()
+{
+    QSet<QString> cat;
+    for (auto res : m_resources) {
+        auto meta = res->metadata();
+        if (meta) {
+            for (auto c : meta->categories) {
+                cat.insert(c);
+            }
+        }
+    }
+    return cat.values();
 }

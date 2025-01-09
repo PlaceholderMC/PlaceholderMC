@@ -43,6 +43,7 @@
 #include "ui/GuiUtil.h"
 
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QKeyEvent>
 #include <QMenu>
 #include <algorithm>
@@ -80,6 +81,13 @@ ExternalResourcesPage::ExternalResourcesPage(BaseInstance* instance, std::shared
 
     connect(ui->treeView, &ModListView::customContextMenuRequested, this, &ExternalResourcesPage::ShowContextMenu);
     connect(ui->treeView, &ModListView::activated, this, &ExternalResourcesPage::itemActivated);
+
+    connect(ui->actionEnableUpdates, &QAction::triggered, this, &ExternalResourcesPage::enableUpdates);
+    connect(ui->actionDisableUpdates, &QAction::triggered, this, &ExternalResourcesPage::disableUpdates);
+
+    connect(ui->actionAddCategory, &QAction::triggered, this, &ExternalResourcesPage::addCategory);
+    connect(ui->actionRemoveCategory, &QAction::triggered, this, &ExternalResourcesPage::removeCategory);
+    connect(ui->actionRemoveAllCategory, &QAction::triggered, this, &ExternalResourcesPage::removeAllCategories);
 
     auto selection_model = ui->treeView->selectionModel();
 
@@ -328,6 +336,8 @@ void ExternalResourcesPage::updateActions()
     const bool hasSelection = ui->treeView->selectionModel()->hasSelection();
     const QModelIndexList selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection()).indexes();
     const QList<Resource*> selectedResources = m_model->selectedResources(selection);
+    const bool hasMeta = hasSelection && std::any_of(selectedResources.begin(), selectedResources.end(),
+                                                     [](Resource* resource) { return resource->metadata(); });
 
     ui->actionUpdateItem->setEnabled(!m_model->empty());
     ui->actionResetItemMetadata->setEnabled(hasSelection);
@@ -340,6 +350,12 @@ void ExternalResourcesPage::updateActions()
 
     ui->actionViewHomepage->setEnabled(hasSelection && std::any_of(selectedResources.begin(), selectedResources.end(),
                                                                    [](Resource* resource) { return !resource->homepage().isEmpty(); }));
+
+    ui->actionEnableUpdates->setEnabled(hasMeta);
+    ui->actionDisableUpdates->setEnabled(hasMeta);
+    ui->actionAddCategory->setEnabled(hasMeta);
+    ui->actionRemoveCategory->setEnabled(hasMeta);
+    ui->actionRemoveAllCategory->setEnabled(hasMeta);
     ui->actionExportMetadata->setEnabled(!m_model->empty());
 }
 
@@ -359,4 +375,47 @@ QString ExternalResourcesPage::extraHeaderInfoString()
             return tr(" (%1 installed, %2 selected)").arg(m_model->size()).arg(count);
     }
     return tr(" (%1 installed)").arg(m_model->size());
+}
+
+void ExternalResourcesPage::enableUpdates()
+{
+    auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection());
+    m_model->setResourceUpdate(selection.indexes(), EnableAction::ENABLE);
+}
+
+void ExternalResourcesPage::disableUpdates()
+{
+    auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection());
+    m_model->setResourceUpdate(selection.indexes(), EnableAction::DISABLE);
+}
+
+void ExternalResourcesPage::addCategory()
+{
+    auto cat = m_model->categories();
+    cat.prepend("");
+    bool ok = false;
+    QString dst = QInputDialog::getItem(this, tr("Category name"), tr("Enter a new category name."), cat, 0, true, &ok);
+    dst = dst.simplified();
+    if (ok) {
+        auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection());
+        m_model->addResourceCategory(selection.indexes(), dst);
+    }
+}
+
+void ExternalResourcesPage::removeCategory()
+{
+    auto cat = m_model->categories();
+    bool ok = false;
+    QString dst = QInputDialog::getItem(this, tr("Category name"), tr("Enter a category name."), cat, 0, true, &ok);
+    dst = dst.simplified();
+    if (ok) {
+        auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection());
+        m_model->removeResourceCategory(selection.indexes(), dst);
+    }
+}
+
+void ExternalResourcesPage::removeAllCategories()
+{
+    auto selection = m_filterModel->mapSelectionToSource(ui->treeView->selectionModel()->selection());
+    m_model->removeAllResourceCategory(selection.indexes());
 }

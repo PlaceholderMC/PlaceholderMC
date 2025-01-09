@@ -103,6 +103,22 @@ auto Resource::homepage() const -> QString
     return {};
 }
 
+QString Resource::categories() const
+{
+    if (metadata())
+        return metadata()->categories.join(", ");
+
+    return {};
+}
+
+bool Resource::lockUpdate() const
+{
+    if (metadata())
+        return metadata()->lockUpdate;
+
+    return false;
+}
+
 void Resource::setMetadata(std::shared_ptr<Metadata::ModStruct>&& metadata)
 {
     if (status() == ResourceStatus::NO_METADATA)
@@ -164,6 +180,11 @@ int Resource::compare(const Resource& other, SortType type) const
 
 bool Resource::applyFilter(QRegularExpression filter) const
 {
+    bool earlyExit = false;
+    auto result = checkCategories(filter, earlyExit);
+    if (earlyExit) {
+        return result;
+    }
     return filter.match(name()).hasMatch();
 }
 
@@ -260,4 +281,23 @@ auto Resource::getOriginalFileName() const -> QString
     if (!m_enabled)
         fileName.chop(9);
     return fileName;
+}
+
+bool Resource::checkCategories(QRegularExpression filter, bool& match) const
+{
+    auto pat = filter.pattern();
+    match = false;
+    if (pat.startsWith("#")) {
+        match = true;
+        if (!metadata()) {
+            return false;
+        }
+        pat = pat.mid(1);
+        for (auto c : metadata()->categories) {
+            if (c.contains(pat)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

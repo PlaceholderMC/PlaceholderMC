@@ -691,7 +691,7 @@ void FlameCreationTask::validateZIPResources(QEventLoop& loop)
         if (file.targetFolder != "mods" || (file.version.fileName.endsWith(".zip") && !zipMods.contains(file.version.fileName))) {
             continue;
         }
-        task->addTask(makeShared<LocalResourceUpdateTask>(folder, file.pack, file.version));
+        task->addTask(makeShared<LocalResourceUpdateTask>(folder, file.pack, file.version, true));
     }
     connect(task.get(), &Task::finished, &loop, &QEventLoop::quit);
     m_process_update_file_info_job = task;

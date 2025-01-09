@@ -7,7 +7,18 @@
 class ResourcePackFolderModel : public ResourceFolderModel {
     Q_OBJECT
    public:
-    enum Columns { ActiveColumn = 0, ImageColumn, NameColumn, PackFormatColumn, DateColumn, ProviderColumn, SizeColumn, NUM_COLUMNS };
+    enum Columns {
+        ActiveColumn = 0,
+        ImageColumn,
+        NameColumn,
+        PackFormatColumn,
+        DateColumn,
+        ProviderColumn,
+        SizeColumn,
+        CategoryColumn,
+        LockUpdateCoumn,
+        NUM_COLUMNS
+    };
 
     explicit ResourcePackFolderModel(const QDir& dir, BaseInstance* instance, bool is_indexed, bool create_dir, QObject* parent = nullptr);
 
