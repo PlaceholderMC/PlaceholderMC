@@ -226,14 +226,17 @@ struct MojangError {
     static MojangError fromJSON(QByteArray data)
     {
         MojangError out;
-        out.error = QString::fromUtf8(data);
+        out.rawError = QString::fromUtf8(data);
         auto doc = QJsonDocument::fromJson(data, &out.parseError);
-        auto object = doc.object();
 
-        out.fullyParsed = true;
-        out.fullyParsed &= Parsers::getString(object.value("path"), out.path);
-        out.fullyParsed &= Parsers::getString(object.value("error"), out.error);
-        out.fullyParsed &= Parsers::getString(object.value("errorMessage"), out.errorMessage);
+        out.fullyParsed = false;
+        if (!out.parseError.error) {
+            auto object = doc.object();
+            out.fullyParsed = true;
+            out.fullyParsed &= Parsers::getString(object.value("path"), out.path);
+            out.fullyParsed &= Parsers::getString(object.value("error"), out.error);
+            out.fullyParsed &= Parsers::getString(object.value("errorMessage"), out.errorMessage);
+        }
 
         return out;
     }
@@ -261,7 +264,21 @@ void ProfileSetupDialog::setupProfileFinished()
     } else {
         auto parsedError = MojangError::fromJSON(*m_profile_response);
         ui->errorLabel->setVisible(true);
-        ui->errorLabel->setText(tr("The server returned the following error:") + "\n\n" + parsedError.errorMessage);
+
+        QString errorMessage = tr("Network error(%1): %2 ;HTTP Status: %3")
+                                   .arg(QString::number(m_profile_task->error()), m_profile_task->errorString(),
+                                        QString::number(m_profile_task->replyStatusCode()));
+
+        if (parsedError.fullyParsed) {
+            errorMessage += "Path: " + parsedError.path + "\n";
+            errorMessage += "Error: " + parsedError.error + "\n";
+            errorMessage += "Error message: " + parsedError.errorMessage + "\n";
+        } else {
+            errorMessage += "Failed to parse Mojang error: " + parsedError.parseError.errorString() + "\n";
+            errorMessage += "Raw contents:\n" + parsedError.rawError + "\n";
+        }
+
+        ui->errorLabel->setText(tr("The server returned the following error:") + "\n\n" + errorMessage);
         qDebug() << parsedError.rawError;
         auto button = ui->buttonBox->button(QDialogButtonBox::Cancel);
         button->setEnabled(true);
