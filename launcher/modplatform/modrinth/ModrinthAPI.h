@@ -170,9 +170,16 @@ class ModrinthAPI : public NetworkResourceAPI {
 
     QString getGameVersionsArray(std::list<Version> mcVersions) const
     {
+        static const QString preString = " Pre-Release ";
         QString s;
         for (auto& ver : mcVersions) {
-            s += QString("\"versions:%1\",").arg(ver.toString());
+            auto verStr = ver.toString();
+
+            if (verStr.contains(preString)) {
+                verStr.replace(preString, "-pre");
+            }
+            verStr.replace(" ", "-");
+            s += QString("\"versions:%1\",").arg(verStr);
         }
         s.remove(s.length() - 1, 1);  // remove last comma
         return s.isEmpty() ? QString() : s;
