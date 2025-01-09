@@ -201,11 +201,7 @@ void ExportInstanceDialog::loadPackIgnore()
     }
     auto ignoreData = ignoreFile.readAll();
     auto string = QString::fromUtf8(ignoreData);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     proxyModel->setBlockedPaths(string.split('\n', Qt::SkipEmptyParts));
-#else
-    proxyModel->setBlockedPaths(string.split('\n', QString::SkipEmptyParts));
-#endif
 }
 
 void ExportInstanceDialog::savePackIgnore()

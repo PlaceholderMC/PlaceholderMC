@@ -138,11 +138,7 @@ QString formatName(const QDir& iconsDir, const QFileInfo& iconFile)
 /// Split into a separate function because the preprocessing impedes readability
 QSet<QString> toStringSet(const QList<QString>& list)
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QSet<QString> set(list.begin(), list.end());
-#else
-    QSet<QString> set = list.toSet();
-#endif
     return set;
 }
 

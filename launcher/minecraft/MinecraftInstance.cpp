@@ -756,11 +756,7 @@ QStringList MinecraftInstance::processMinecraftArgs(AuthSessionPtr session, Mine
     token_mapping["assets_root"] = absAssetsDir;
     token_mapping["assets_index_name"] = assets->id;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList parts = args_pattern.split(' ', Qt::SkipEmptyParts);
-#else
-    QStringList parts = args_pattern.split(' ', QString::SkipEmptyParts);
-#endif
     for (int i = 0; i < parts.length(); i++) {
         parts[i] = replaceTokensIn(parts[i], token_mapping);
     }
@@ -815,11 +811,7 @@ QString MinecraftInstance::createLaunchScript(AuthSessionPtr session, MinecraftT
                     auto mainWindow = qobject_cast<QMainWindow*>(w);
                     if (mainWindow) {
                         auto m = mainWindow->windowHandle()->frameMargins();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
                         screenGeometry = screenGeometry.shrunkBy(m);
-#else
-                        screenGeometry = { screenGeometry.width() - m.left() - m.right(), screenGeometry.height() - m.top() - m.bottom() };
-#endif
                         break;
                     }
                 }

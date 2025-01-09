@@ -367,16 +367,11 @@ void ResourceFolderModel::onUpdateSucceeded()
 
     auto& new_resources = update_results->resources;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     auto current_list = m_resources_index.keys();
     QSet<QString> current_set(current_list.begin(), current_list.end());
 
     auto new_list = new_resources.keys();
     QSet<QString> new_set(new_list.begin(), new_list.end());
-#else
-    QSet<QString> current_set(m_resources_index.keys().toSet());
-    QSet<QString> new_set(new_resources.keys().toSet());
-#endif
 
     applyUpdates(current_set, new_set, new_resources);
 }

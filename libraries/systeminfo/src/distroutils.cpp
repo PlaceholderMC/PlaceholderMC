@@ -145,11 +145,7 @@ void Sys::lsb_postprocess(Sys::LsbInfo& lsb, Sys::DistributionInfo& out)
         vers = lsb.codename;
     } else {
         // ubuntu, debian, gentoo, scientific, slackware, ... ?
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         auto parts = dist.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-#else
-        auto parts = dist.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
-#endif
         if (parts.size()) {
             dist = parts[0];
         }
@@ -182,11 +178,7 @@ QString Sys::_extract_distribution(const QString& x)
     if (release.startsWith("suse linux enterprise")) {
         return "sles";
     }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList list = release.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-#else
-    QStringList list = release.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
-#endif
     if (list.size()) {
         return list[0];
     }
@@ -196,11 +188,7 @@ QString Sys::_extract_distribution(const QString& x)
 QString Sys::_extract_version(const QString& x)
 {
     QRegularExpression versionish_string(QRegularExpression::anchoredPattern("\\d+(?:\\.\\d+)*$"));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList list = x.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-#else
-    QStringList list = x.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
-#endif
     for (int i = list.size() - 1; i >= 0; --i) {
         QString chunk = list[i];
         if (versionish_string.match(chunk).hasMatch()) {

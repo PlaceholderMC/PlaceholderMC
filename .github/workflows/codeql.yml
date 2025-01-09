@@ -1,16 +1,16 @@
 name: "CodeQL Code Scanning"
 
-on: [ push, pull_request, workflow_dispatch ]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
   CodeQL:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: 'true'
+          submodules: "true"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -20,14 +20,25 @@ jobs:
           languages: cpp, java
 
       - name: Install Dependencies
-        run:  
-          sudo apt-get -y update
+        run: sudo apt-get -y update
 
-          sudo apt-get -y install ninja-build extra-cmake-modules scdoc qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libqt5core5a libqt5network5 libqt5gui5 libqt5networkauth5 libqt5networkauth5-dev
+          sudo apt-get -y install ninja-build extra-cmake-modules scdoc
+
+      - name: Install Qt (macOS, Linux, Qt 6 & Windows MSVC)
+        uses: jurplel/install-qt-action@v3
+        with:
+          aqtversion: "==3.1.*"
+          py7zrversion: ">=0.20.2"
+          version: "6.7.0"
+          host: "linux"
+          target: "desktop"
+          arch: ""
+          modules: "qt5compat qtimageformats qtnetworkauth"
+          tools: ""
 
       - name: Configure and Build
         run: |
-          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr -DLauncher_QT_VERSION_MAJOR=5 -G Ninja
+          cmake -S . -B build -DCMAKE_INSTALL_PREFIX=/usr -G Ninja
 
           cmake --build build
 

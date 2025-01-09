@@ -235,15 +235,7 @@ void ModrinthPage::onSelectionChanged(QModelIndex curr, [[maybe_unused]] QModelI
                 qWarning() << "Error while reading modrinth modpack version: " << e.cause();
             }
             auto pred = [this](const Modrinth::ModpackVersion& v) { return !checkVersionFilters(v, m_filterWidget->getFilter()); };
-#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
             current.versions.removeIf(pred);
-#else
-    for (auto it = current.versions.begin(); it != current.versions.end();)
-        if (pred(*it))
-            it = current.versions.erase(it);
-        else
-            ++it;
-#endif
             for (auto version : current.versions) {
                 auto release_type = version.version_type.isValid() ? QString(" [%1]").arg(version.version_type.toString()) : "";
                 auto mcVersion = !version.gameVersion.isEmpty() && !version.name.contains(version.gameVersion)

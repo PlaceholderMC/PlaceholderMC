@@ -23,12 +23,7 @@
 
 QIcon FastFileIconProvider::icon(const QFileInfo& info) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     bool link = info.isSymbolicLink() || info.isAlias() || info.isShortcut();
-#else
-    // in versions prior to 6.4 we don't have access to isAlias
-    bool link = info.isSymLink();
-#endif
     QStyle::StandardPixmap icon;
 
     if (info.isDir()) {

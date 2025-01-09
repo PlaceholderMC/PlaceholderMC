@@ -1,8 +1,6 @@
 project(systeminfo)
 
-if(QT_VERSION_MAJOR EQUAL 5)
-    find_package(Qt5 COMPONENTS Core REQUIRED)
-elseif(Launcher_QT_VERSION_MAJOR EQUAL 6)
+if(Launcher_QT_VERSION_MAJOR EQUAL 6)
     find_package(Qt6 COMPONENTS Core Core5Compat REQUIRED)
     list(APPEND systeminfo_LIBS Qt${QT_VERSION_MAJOR}::Core5Compat)
 endif()

@@ -104,12 +104,10 @@ void NetRequest::executeTask()
         header_proxy->writeHeaders(request);
     }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
 #if defined(LAUNCHER_APPLICATION)
     request.setTransferTimeout(APPLICATION->settings()->get("RequestTimeout").toInt() * 1000);
 #else
     request.setTransferTimeout();
-#endif
 #endif
 
     m_last_progress_time = m_clock.now();
@@ -122,11 +120,7 @@ void NetRequest::executeTask()
     connect(rep, &QNetworkReply::uploadProgress, this, &NetRequest::onProgress);
     connect(rep, &QNetworkReply::downloadProgress, this, &NetRequest::onProgress);
     connect(rep, &QNetworkReply::finished, this, &NetRequest::downloadFinished);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)  // QNetworkReply::errorOccurred added in 5.15
     connect(rep, &QNetworkReply::errorOccurred, this, &NetRequest::downloadError);
-#else
-    connect(rep, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &NetRequest::downloadError);
-#endif
     connect(rep, &QNetworkReply::sslErrors, this, &NetRequest::sslErrors);
     connect(rep, &QNetworkReply::readyRead, this, &NetRequest::downloadReadyRead);
 }
@@ -323,11 +317,7 @@ auto NetRequest::abort() -> bool
 {
     m_state = State::AbortedByUser;
     if (m_reply) {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)  // QNetworkReply::errorOccurred added in 5.15
         disconnect(m_reply.get(), &QNetworkReply::errorOccurred, nullptr, nullptr);
-#else
-        disconnect(m_reply.get(), QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), nullptr, nullptr);
-#endif
         m_reply->abort();
     }
     return true;

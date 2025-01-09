@@ -106,11 +106,7 @@ QPixmap MinecraftAccount::getFace() const
         return QPixmap();
     }
     QPixmap skin = QPixmap(8, 8);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     skin.fill(QColorConstants::Transparent);
-#else
-    skin.fill(QColor(0, 0, 0, 0));
-#endif
     QPainter painter(&skin);
     painter.drawPixmap(0, 0, skinTexture.copy(8, 8, 8, 8));
     painter.drawPixmap(0, 0, skinTexture.copy(40, 8, 8, 8));
@@ -290,13 +286,8 @@ QUuid MinecraftAccount::uuidFromUsername(QString username)
     // basically a reimplementation of Java's UUID#nameUUIDFromBytes
     QByteArray digest = QCryptographicHash::hash(input, QCryptographicHash::Md5);
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    auto bOr = [](QByteArray& array, int index, char value) { array[index] = array.at(index) | value; };
-    auto bAnd = [](QByteArray& array, int index, char value) { array[index] = array.at(index) & value; };
-#else
     auto bOr = [](QByteArray& array, qsizetype index, char value) { array[index] |= value; };
     auto bAnd = [](QByteArray& array, qsizetype index, char value) { array[index] &= value; };
-#endif
     bAnd(digest, 6, (char)0x0f);  // clear version
     bOr(digest, 6, (char)0x30);   // set to version 3
     bAnd(digest, 8, (char)0x3f);  // clear variant
