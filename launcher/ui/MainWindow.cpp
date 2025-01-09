@@ -208,6 +208,26 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         exportInstanceMenu->addAction(ui->actionExportInstanceMrPack);
         exportInstanceMenu->addAction(ui->actionExportInstanceFlamePack);
         ui->actionExportInstance->setMenu(exportInstanceMenu);
+
+        QList<QAction*> shortcutActions = { ui->actionCreateInstanceShortcutOther };
+        if (!DesktopServices::isFlatpak()) {
+            QString desktopDir = FS::getDesktopDir();
+            QString applicationDir = FS::getApplicationsDir();
+
+            if(!applicationDir.isEmpty())
+                shortcutActions.push_front(ui->actionCreateInstanceShortcutApplications);
+
+            if(!desktopDir.isEmpty())
+                shortcutActions.push_front(ui->actionCreateInstanceShortcutDesktop);
+        }
+
+        if(shortcutActions.length() > 1) {
+            auto shortcutInstanceMenu = new QMenu(this);
+
+            for(auto action : shortcutActions)
+                shortcutInstanceMenu->addAction(action);
+            ui->actionCreateInstanceShortcut->setMenu(shortcutInstanceMenu);
+        }
     }
 
     // hide, disable and show stuff
@@ -1491,18 +1511,11 @@ void MainWindow::on_actionKillInstance_triggered()
     }
 }
 
-void MainWindow::on_actionCreateInstanceShortcut_triggered()
+void MainWindow::createInstanceShortcut(QString shortcutFilePath)
 {
     if (!m_selectedInstance)
         return;
-    auto desktopPath = FS::getDesktopDir();
-    if (desktopPath.isEmpty()) {
-        // TODO come up with an alternative solution (open "save file" dialog)
-        QMessageBox::critical(this, tr("Create instance shortcut"), tr("Couldn't find desktop?!"));
-        return;
-    }
 
-    QString desktopFilePath;
     QString appPath = QApplication::applicationFilePath();
     QString iconPath;
     QStringList args;
@@ -1571,13 +1584,6 @@ void MainWindow::on_actionCreateInstanceShortcut_triggered()
     }
 
     if (DesktopServices::isFlatpak()) {
-        desktopFilePath = FS::PathCombine(desktopPath, FS::RemoveInvalidFilenameChars(m_selectedInstance->name()) + ".desktop");
-        QFileDialog fileDialog;
-        // workaround to make sure the portal file dialog opens in the desktop directory
-        fileDialog.setDirectoryUrl(desktopPath);
-        desktopFilePath = fileDialog.getSaveFileName(this, tr("Create Shortcut"), desktopFilePath, tr("Desktop Entries") + " (*.desktop)");
-        if (desktopFilePath.isEmpty())
-            return;  // file dialog canceled by user
         appPath = "flatpak";
         QString flatpakAppId = BuildConfig.LAUNCHER_DESKTOPFILENAME;
         flatpakAppId.remove(".desktop");
@@ -1618,18 +1624,97 @@ void MainWindow::on_actionCreateInstanceShortcut_triggered()
     return;
 #endif
     args.append({ "--launch", m_selectedInstance->id() });
-    if (FS::createShortcut(desktopFilePath, appPath, args, m_selectedInstance->name(), iconPath)) {
-#if not defined(Q_OS_MACOS)
-        QMessageBox::information(this, tr("Create instance shortcut"), tr("Created a shortcut to this instance on your desktop!"));
-#else
-        QMessageBox::information(this, tr("Create instance shortcut"), tr("Created a shortcut to this instance!"));
-#endif
-    } else {
+
+    if (!FS::createShortcut(std::move(shortcutFilePath), appPath, args, m_selectedInstance->name(), iconPath)) {
 #if not defined(Q_OS_MACOS)
         iconFile.remove();
 #endif
         QMessageBox::critical(this, tr("Create instance shortcut"), tr("Failed to create instance shortcut!"));
+        return;
     }
+}
+
+void MainWindow::on_actionCreateInstanceShortcutOther_triggered()
+{
+    if (!m_selectedInstance)
+        return;
+
+    QString defaultedDir = FS::getDesktopDir();
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD) || defined(Q_OS_OPENBSD)
+    QString extension = ".desktop";
+#elif defined(Q_OS_WINDOWS)
+    QString extension = ".lnk";
+#else
+    QString extension = "";
+#endif
+
+    QString shortcutFilePath = FS::PathCombine(defaultedDir, FS::RemoveInvalidFilenameChars(m_selectedInstance->name()) + extension);
+    QFileDialog fileDialog;
+    // workaround to make sure the portal file dialog opens in the desktop directory
+    fileDialog.setDirectoryUrl(defaultedDir);
+
+    shortcutFilePath =
+        fileDialog.getSaveFileName(this, tr("Create Shortcut"), shortcutFilePath, tr("Desktop Entries") + " (*" + extension + ")");
+    if (shortcutFilePath.isEmpty())
+        return;  // file dialog canceled by user
+
+    if(shortcutFilePath.endsWith(extension))
+        shortcutFilePath = shortcutFilePath.mid(0, shortcutFilePath.length() - extension.length());
+    createInstanceShortcut(shortcutFilePath);
+    QMessageBox::information(this, tr("Create instance shortcut"), tr("Created a shortcut to this instance!"));
+}
+
+void MainWindow::on_actionCreateInstanceShortcut_triggered()
+{
+    if (!m_selectedInstance)
+        return;
+
+    if (DesktopServices::isFlatpak())
+        on_actionCreateInstanceShortcutOther_triggered();
+    else
+        on_actionCreateInstanceShortcutDesktop_triggered();
+}
+
+void MainWindow::on_actionCreateInstanceShortcutDesktop_triggered()
+{
+    if (!m_selectedInstance)
+        return;
+
+    QString desktopDir = FS::getDesktopDir();
+    if (desktopDir.isEmpty()) {
+        QMessageBox::critical(this, tr("Create instance shortcut"), tr("Couldn't find desktop?!"));
+        return;
+    }
+
+    QString shortcutFilePath = FS::PathCombine(FS::getDesktopDir(), FS::RemoveInvalidFilenameChars(m_selectedInstance->name()));
+    createInstanceShortcut(shortcutFilePath);
+    QMessageBox::information(this, tr("Create instance shortcut"), tr("Created a shortcut to this instance on your desktop!"));
+}
+
+void MainWindow::on_actionCreateInstanceShortcutApplications_triggered()
+{
+    if (!m_selectedInstance)
+        return;
+
+    QString applicationsDir = FS::getApplicationsDir();
+    if (applicationsDir.isEmpty()) {
+        QMessageBox::critical(this, tr("Create instance shortcut"), tr("Couldn't find applications folder?!"));
+        return;
+    }
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
+    applicationsDir = FS::PathCombine(applicationsDir, BuildConfig.LAUNCHER_DISPLAYNAME + " Instances");
+
+    QDir applicationsDirQ(applicationsDir);
+    if (!applicationsDirQ.mkpath(".")) {
+        QMessageBox::critical(this, tr("Create instance shortcut"), tr("Failed to create instances folder in applications folder!"));
+        return;
+    }
+#endif
+
+    QString shortcutFilePath = FS::PathCombine(applicationsDir, FS::RemoveInvalidFilenameChars(m_selectedInstance->name()));
+    createInstanceShortcut(shortcutFilePath);
+    QMessageBox::information(this, tr("Create instance shortcut"), tr("Created a shortcut to this instance in your applications folder!"));
 }
 
 void MainWindow::taskEnd()
