@@ -87,16 +87,12 @@ QVariant GameOptions::data(const QModelIndex& index, int role) const
     if (row < 0 || row >= int(contents.size()))
         return QVariant();
 
-    switch (role) {
-        case Qt::DisplayRole:
-            if (column == 0) {
-                return contents[row].key;
-            } else {
-                return contents[row].value;
-            }
-        default:
-            return QVariant();
+    if (role == Qt::DisplayRole) {
+        if (column == 0)
+            return contents[row].key;
+        return contents[row].value;
     }
+    return QVariant();
 }
 
 int GameOptions::rowCount(const QModelIndex&) const

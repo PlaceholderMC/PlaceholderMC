@@ -92,7 +92,7 @@ ProgressDialog::~ProgressDialog()
 {
     for (auto conn : this->m_taskConnections) {
         disconnect(conn);
-    }   
+    }
     delete ui;
 }
 

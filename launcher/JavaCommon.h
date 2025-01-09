@@ -24,7 +24,7 @@ class TestCheck : public QObject {
     TestCheck(QWidget* parent, QString path, QString args, int minMem, int maxMem, int permGen)
         : m_parent(parent), m_path(path), m_args(args), m_minMem(minMem), m_maxMem(maxMem), m_permGen(permGen)
     {}
-    virtual ~TestCheck() {};
+    virtual ~TestCheck() = default;
 
     void run();
 

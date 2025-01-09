@@ -15,7 +15,7 @@
 DataMigrationTask::DataMigrationTask(const QString& sourcePath, const QString& targetPath, const IPathMatcher::Ptr pathMatcher)
     : Task(), m_sourcePath(sourcePath), m_targetPath(targetPath), m_pathMatcher(pathMatcher), m_copy(sourcePath, targetPath)
 {
-    m_copy.matcher(m_pathMatcher.get()).whitelist(true);
+    m_copy.matcher(m_pathMatcher).whitelist(true);
 }
 
 void DataMigrationTask::executeTask()

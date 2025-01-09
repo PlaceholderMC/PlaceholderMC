@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QLineEdit>
 
 class FocusLineEdit : public QLineEdit {
