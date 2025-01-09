@@ -164,22 +164,20 @@ bool ResourceFolderModel::installResource(QString original_path)
     return false;
 }
 
-bool ResourceFolderModel::installResourceWithFlameMetadata(QString path, ModPlatform::IndexedVersion& vers)
+void ResourceFolderModel::installResourceWithFlameMetadata(QString path, ModPlatform::IndexedVersion& vers)
 {
+    auto install = [this, path] { installResource(std::move(path)); };
     if (vers.addonId.isValid()) {
         ModPlatform::IndexedPack pack{
             vers.addonId,
             ModPlatform::ResourceProvider::FLAME,
         };
 
-        QEventLoop loop;
-
         auto response = std::make_shared<QByteArray>();
         auto job = FlameAPI().getProject(vers.addonId.toString(), response);
-
-        QObject::connect(job.get(), &Task::failed, [&loop] { loop.quit(); });
-        QObject::connect(job.get(), &Task::aborted, &loop, &QEventLoop::quit);
-        QObject::connect(job.get(), &Task::succeeded, [response, this, &vers, &loop, &pack] {
+        QObject::connect(job.get(), &Task::failed, this, install);
+        QObject::connect(job.get(), &Task::aborted, this, install);
+        QObject::connect(job.get(), &Task::succeeded, [response, this, &vers, install, &pack] {
             QJsonParseError parse_error{};
             QJsonDocument doc = QJsonDocument::fromJson(*response, &parse_error);
             if (parse_error.error != QJsonParseError::NoError) {
@@ -196,16 +194,14 @@ bool ResourceFolderModel::installResourceWithFlameMetadata(QString path, ModPlat
                 qWarning() << "Error while reading mod info: " << e.cause();
             }
             LocalResourceUpdateTask update_metadata(indexDir(), pack, vers);
-            QObject::connect(&update_metadata, &Task::finished, &loop, &QEventLoop::quit);
+            QObject::connect(&update_metadata, &Task::finished, this, install);
             update_metadata.start();
         });
 
         job->start();
-
-        loop.exec();
+    } else {
+        install();
     }
-
-    return installResource(std::move(path));
 }
 
 bool ResourceFolderModel::uninstallResource(QString file_name, bool preserve_metadata)

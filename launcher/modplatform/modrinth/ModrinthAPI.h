@@ -12,21 +12,21 @@
 
 class ModrinthAPI : public NetworkResourceAPI {
    public:
-    auto currentVersion(QString hash, QString hash_format, std::shared_ptr<QByteArray> response) -> Task::Ptr;
+    Task::Ptr currentVersion(QString hash, QString hash_format, std::shared_ptr<QByteArray> response);
 
-    auto currentVersions(const QStringList& hashes, QString hash_format, std::shared_ptr<QByteArray> response) -> Task::Ptr;
+    Task::Ptr currentVersions(const QStringList& hashes, QString hash_format, std::shared_ptr<QByteArray> response);
 
-    auto latestVersion(QString hash,
-                       QString hash_format,
-                       std::optional<std::list<Version>> mcVersions,
-                       std::optional<ModPlatform::ModLoaderTypes> loaders,
-                       std::shared_ptr<QByteArray> response) -> Task::Ptr;
+    Task::Ptr latestVersion(QString hash,
+                            QString hash_format,
+                            std::optional<std::list<Version>> mcVersions,
+                            std::optional<ModPlatform::ModLoaderTypes> loaders,
+                            std::shared_ptr<QByteArray> response);
 
-    auto latestVersions(const QStringList& hashes,
-                        QString hash_format,
-                        std::optional<std::list<Version>> mcVersions,
-                        std::optional<ModPlatform::ModLoaderTypes> loaders,
-                        std::shared_ptr<QByteArray> response) -> Task::Ptr;
+    Task::Ptr latestVersions(const QStringList& hashes,
+                             QString hash_format,
+                             std::optional<std::list<Version>> mcVersions,
+                             std::optional<ModPlatform::ModLoaderTypes> loaders,
+                             std::shared_ptr<QByteArray> response);
 
     Task::Ptr getProjects(QStringList addonIds, std::shared_ptr<QByteArray> response) const override;
 

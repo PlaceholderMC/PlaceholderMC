@@ -1,7 +1,6 @@
 #pragma once
 
 #include "modplatform/CheckUpdateTask.h"
-#include "net/NetJob.h"
 
 class FlameCheckUpdate : public CheckUpdateTask {
     Q_OBJECT
@@ -19,12 +18,12 @@ class FlameCheckUpdate : public CheckUpdateTask {
 
    protected slots:
     void executeTask() override;
+   private slots:
+    void getLatestVersionCallback(Resource* resource, std::shared_ptr<QByteArray> response);
+    void collectBlockedMods();
 
    private:
-    ModPlatform::IndexedPack getProjectInfo(ModPlatform::IndexedVersion& ver_info);
-    ModPlatform::IndexedVersion getFileInfo(int addonId, int fileId);
+    Task::Ptr m_task = nullptr;
 
-    NetJob* m_net_job = nullptr;
-
-    bool m_was_aborted = false;
+    QHash<Resource*, QString> m_blocked;
 };

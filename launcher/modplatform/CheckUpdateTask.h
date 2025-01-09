@@ -1,9 +1,7 @@
 #pragma once
 
-#include "minecraft/mod/Mod.h"
 #include "minecraft/mod/tasks/GetModDependenciesTask.h"
 #include "modplatform/ModIndex.h"
-#include "modplatform/ResourceAPI.h"
 #include "tasks/Task.h"
 
 class ResourceDownloadTask;
@@ -19,9 +17,9 @@ class CheckUpdateTask : public Task {
                     std::shared_ptr<ResourceFolderModel> resourceModel)
         : Task()
         , m_resources(resources)
-        , m_game_versions(mcVersions)
-        , m_loaders_list(std::move(loadersList))
-        , m_resource_model(std::move(resourceModel))
+        , m_gameVersions(mcVersions)
+        , m_loadersList(std::move(loadersList))
+        , m_resourceModel(std::move(resourceModel))
     {}
 
     struct Update {
@@ -71,9 +69,9 @@ class CheckUpdateTask : public Task {
 
    protected:
     QList<Resource*>& m_resources;
-    std::list<Version>& m_game_versions;
-    QList<ModPlatform::ModLoaderType> m_loaders_list;
-    std::shared_ptr<ResourceFolderModel> m_resource_model;
+    std::list<Version>& m_gameVersions;
+    QList<ModPlatform::ModLoaderType> m_loadersList;
+    std::shared_ptr<ResourceFolderModel> m_resourceModel;
 
     std::vector<Update> m_updates;
     QList<std::shared_ptr<GetModDependenciesTask::PackDependency>> m_deps;
