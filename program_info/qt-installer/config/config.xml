@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+	<Name>Prism Launcher</Name>
+	<Version>8.4</Version>
+	<Title>Prism Launcher Installer</Title>
+	<Publisher>Prism Launcher</Publisher>
+	<ProductUrl>https://prismlauncher.org</ProductUrl>
+	<StartMenuDir></StartMenuDir>
+	<TargetDir>PrismLauncher</TargetDir>
+	<MaintenanceToolName>PrismLauncherMaintenanceTool</MaintenanceToolName>
+	<MaintenanceToolIniFile>PrismLauncherMaintenanceTool.ini</MaintenanceToolIniFile>
+	<ControlScript>controller.js</ControlScript>
+</Installer>
