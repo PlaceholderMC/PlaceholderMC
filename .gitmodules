@@ -22,3 +22,6 @@
 [submodule "flatpak/shared-modules"]
 	path = flatpak/shared-modules
 	url = https://github.com/flathub/shared-modules.git
+[submodule "libraries/karchive"]
+	path = libraries/karchive
+	url = https://invent.kde.org/frameworks/karchive.git

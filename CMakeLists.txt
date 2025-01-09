@@ -150,8 +150,15 @@ endif()
 
 option(BUILD_TESTING "Build the testing tree." ON)
 
-find_package(ECM QUIET NO_MODULE)
+# find_package(ECM QUIET NO_MODULE)
 if(NOT ECM_FOUND)
+    if(Launcher_QT_VERSION_MAJOR EQUAL 5)
+        execute_process(
+            COMMAND git -C ${CMAKE_SOURCE_DIR}/libraries/extra-cmake-modules checkout bbcbaff78283270c2beee69afd8d5b91da854af8
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE result
+        )
+    endif()
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/extra-cmake-modules/CMakeLists.txt")
         message(STATUS "Using bundled ECM")
         set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/extra-cmake-modules/modules;${CMAKE_MODULE_PATH}")
@@ -355,6 +362,13 @@ if(NOT Launcher_FORCE_BUNDLED_LIBS)
 
     # Find cmark
     find_package(cmark QUIET)
+
+    if(Launcher_QT_VERSION_MAJOR EQUAL 5)
+        find_package(KF5Archive)
+    elseif(Launcher_QT_VERSION_MAJOR EQUAL 6)
+        find_package(KF6Archive)
+    endif()
+
 endif()
 
 include(ECMQtDeclareLoggingCategory)
@@ -554,6 +568,37 @@ else()
     message(STATUS "Using system ghc_filesystem")
 endif()
 add_subdirectory(libraries/qdcss) # css parser
+
+if(Launcher_QT_VERSION_MAJOR EQUAL 5)
+    if(NOT KF5Archive_FOUND)
+        execute_process(
+            COMMAND git -C ${CMAKE_SOURCE_DIR}/libraries/karchive checkout eba2cb37f128733561c9a03f0230e7836c76a045
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            RESULT_VARIABLE result
+        )
+        message(STATUS "Using bundled karchive")
+        add_subdirectory(libraries/karchive) 
+    else()
+        message(STATUS "Using system karchive")
+    endif()
+elseif(Launcher_QT_VERSION_MAJOR EQUAL 6)
+    if(NOT KF6Archive_FOUND)
+        message(STATUS "Using bundled karchive")
+        if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libraries/extra-cmake-modules/CMakeLists.txt")
+            message(STATUS "Using bundled ECM")
+            set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/extra-cmake-modules/modules;${CMAKE_MODULE_PATH}")
+            find_package(ECM 6.3.0 REQUIRED NO_MODULE)
+        else()
+            message(FATAL_ERROR
+                " Could not find ECM\n \n"
+                " Either install ECM using the system package manager or clone submodules\n"
+                " Submodules can be cloned with 'git submodule update --init --recursive'")
+        endif()
+        add_subdirectory(libraries/karchive) 
+    else()
+        message(STATUS "Using system karchive")
+    endif()
+endif()
 
 ############################### Built Artifacts ###############################
 
