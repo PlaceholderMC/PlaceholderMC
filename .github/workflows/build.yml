@@ -80,9 +80,9 @@ jobs:
             architecture: "x64"
             vcvars_arch: "amd64"
             qt_ver: 6
-            qt_host: windows
-            qt_arch: ""
-            qt_version: "6.7.3"
+            qt_host: "windows"
+            qt_arch: "win64_msvc2022_64"
+            qt_version: "6.8.1"
             qt_modules: "qt5compat qtimageformats qtnetworkauth"
             nscurl_tag: "v24.9.26.122"
             nscurl_sha256: "AEE6C4BE3CB6455858E9C1EE4B3AFE0DB9960FA03FE99CCDEDC28390D57CCBB0"
@@ -93,9 +93,9 @@ jobs:
             architecture: "arm64"
             vcvars_arch: "amd64_arm64"
             qt_ver: 6
-            qt_host: windows
-            qt_arch: "win64_msvc2019_arm64"
-            qt_version: "6.7.3"
+            qt_host: "windows"
+            qt_arch: "win64_msvc2022_arm64_cross_compiled"
+            qt_version: "6.8.1"
             qt_modules: "qt5compat qtimageformats qtnetworkauth"
             nscurl_tag: "v24.9.26.122"
             nscurl_sha256: "AEE6C4BE3CB6455858E9C1EE4B3AFE0DB9960FA03FE99CCDEDC28390D57CCBB0"
@@ -106,7 +106,7 @@ jobs:
             qt_ver: 6
             qt_host: mac
             qt_arch: ""
-            qt_version: "6.7.3"
+            qt_version: "6.8.1"
             qt_modules: "qt5compat qtimageformats qtnetworkauth"
 
           - os: macos-14
@@ -216,14 +216,14 @@ jobs:
 
       - name: Install host Qt (Windows MSVC arm64)
         if: runner.os == 'Windows' && matrix.architecture == 'arm64'
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           aqtversion: "==3.1.*"
           py7zrversion: ">=0.20.2"
           version: ${{ matrix.qt_version }}
           host: "windows"
           target: "desktop"
-          arch: ""
+          arch: ${{ matrix.qt_arch }}
           modules: ${{ matrix.qt_modules }}
           cache: ${{ inputs.is_qt_cached }}
           cache-key-prefix: host-qt-arm64-windows
@@ -232,7 +232,7 @@ jobs:
 
       - name: Install Qt (macOS, Linux & Windows MSVC)
         if: matrix.msystem == ''
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
           aqtversion: "==3.1.*"
           py7zrversion: ">=0.20.2"
@@ -264,7 +264,7 @@ jobs:
       - name: Add QT_HOST_PATH var (Windows MSVC arm64)
         if: runner.os == 'Windows' && matrix.architecture == 'arm64'
         run: |
-          echo "QT_HOST_PATH=${{ github.workspace }}\HostQt\Qt\${{ matrix.qt_version }}\msvc2019_64" >> $env:GITHUB_ENV
+          echo "QT_HOST_PATH=${{ github.workspace }}\HostQt\Qt\${{ matrix.qt_version }}\msvc2022_64" >> $env:GITHUB_ENV
 
       - name: Setup java (macOS)
         if: runner.os == 'macOS'
