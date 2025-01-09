@@ -1039,10 +1039,10 @@ void MainWindow::processURLs(QList<QUrl> urls)
 
         switch (type) {
             case PackedResourceType::ResourcePack:
-                minecraftInst->resourcePackList()->installResource(localFileName);
+                minecraftInst->resourcePackList()->installResourceWithFlameMetadata(localFileName, version);
                 break;
             case PackedResourceType::TexturePack:
-                minecraftInst->texturePackList()->installResource(localFileName);
+                minecraftInst->texturePackList()->installResourceWithFlameMetadata(localFileName, version);
                 break;
             case PackedResourceType::DataPack:
                 qWarning() << "Importing of Data Packs not supported at this time. Ignoring" << localFileName;
@@ -1051,7 +1051,7 @@ void MainWindow::processURLs(QList<QUrl> urls)
                 minecraftInst->loaderModList()->installResourceWithFlameMetadata(localFileName, version);
                 break;
             case PackedResourceType::ShaderPack:
-                minecraftInst->shaderPackList()->installResource(localFileName);
+                minecraftInst->shaderPackList()->installResourceWithFlameMetadata(localFileName, version);
                 break;
             case PackedResourceType::WorldSave:
                 minecraftInst->worldList()->installWorld(localFileInfo);
