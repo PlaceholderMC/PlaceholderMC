@@ -131,6 +131,7 @@ void LauncherPartLaunch::executeTask()
 
     QString wrapperCommandStr = instance->getWrapperCommand().trimmed();
     if (!wrapperCommandStr.isEmpty()) {
+        wrapperCommandStr = m_parent->substituteVariables(wrapperCommandStr);
         auto wrapperArgs = Commandline::splitArgs(wrapperCommandStr);
         auto wrapperCommand = wrapperArgs.takeFirst();
         auto realWrapperCommand = QStandardPaths::findExecutable(wrapperCommand);
