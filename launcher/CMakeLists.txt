@@ -918,7 +918,13 @@ SET(LAUNCHER_SOURCES
     ui/pages/instance/ServersPage.h
     ui/pages/instance/WorldListPage.cpp
     ui/pages/instance/WorldListPage.h
-
+    ui/pages/instance/McClient.cpp
+    ui/pages/instance/McClient.h
+    ui/pages/instance/McResolver.cpp
+    ui/pages/instance/McResolver.h
+    ui/pages/instance/ServerPingTask.cpp
+    ui/pages/instance/ServerPingTask.h
+    
     # GUI - global settings pages
     ui/pages/global/AccountListPage.cpp
     ui/pages/global/AccountListPage.h
