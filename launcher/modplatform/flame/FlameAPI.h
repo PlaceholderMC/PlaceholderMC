@@ -15,8 +15,7 @@ class FlameAPI : public NetworkResourceAPI {
     QString getModFileChangelog(int modId, int fileId);
     QString getModDescription(int modId);
 
-    QList<ModPlatform::IndexedVersion> getLatestVersions(VersionSearchArgs&& args);
-    std::optional<ModPlatform::IndexedVersion> getLatestVersion(QList<ModPlatform::IndexedVersion> versions,
+    std::optional<ModPlatform::IndexedVersion> getLatestVersion(QVector<ModPlatform::IndexedVersion> versions,
                                                                 QList<ModPlatform::ModLoaderType> instanceLoaders,
                                                                 ModPlatform::ModLoaderTypes fallback);
 
@@ -108,12 +107,6 @@ class FlameAPI : public NetworkResourceAPI {
         return "https://api.curseforge.com/v1/mods/search?gameId=432&" + get_arguments.join('&');
     }
 
-   private:
-    [[nodiscard]] std::optional<QString> getInfoURL(QString const& id) const override
-    {
-        return QString("https://api.curseforge.com/v1/mods/%1").arg(id);
-    }
-
     [[nodiscard]] std::optional<QString> getVersionsURL(VersionSearchArgs const& args) const override
     {
         auto addonId = args.pack.addonId.toString();
@@ -129,6 +122,11 @@ class FlameAPI : public NetworkResourceAPI {
         return url;
     }
 
+   private:
+    [[nodiscard]] std::optional<QString> getInfoURL(QString const& id) const override
+    {
+        return QString("https://api.curseforge.com/v1/mods/%1").arg(id);
+    }
     [[nodiscard]] std::optional<QString> getDependencyURL(DependencySearchArgs const& args) const override
     {
         auto addonId = args.dependency.addonId.toString();

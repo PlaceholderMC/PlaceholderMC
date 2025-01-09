@@ -40,7 +40,6 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
-#include <QEventLoop>
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include "MessageLevel.h"

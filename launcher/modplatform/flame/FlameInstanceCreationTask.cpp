@@ -437,7 +437,7 @@ bool FlameCreationTask::createInstance()
 
     instance.setName(name());
 
-    m_mod_id_resolver.reset(new Flame::FileResolvingTask(APPLICATION->network(), m_pack));
+    m_mod_id_resolver.reset(new Flame::FileResolvingTask(m_pack));
     connect(m_mod_id_resolver.get(), &Flame::FileResolvingTask::succeeded, this, [this, &loop] { idResolverSucceeded(loop); });
     connect(m_mod_id_resolver.get(), &Flame::FileResolvingTask::failed, [this, &loop](QString reason) {
         m_mod_id_resolver.reset();

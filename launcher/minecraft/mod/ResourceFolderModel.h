@@ -93,7 +93,7 @@ class ResourceFolderModel : public QAbstractListModel {
      */
     virtual bool installResource(QString path);
 
-    virtual bool installResourceWithFlameMetadata(QString path, ModPlatform::IndexedVersion& vers);
+    virtual void installResourceWithFlameMetadata(QString path, ModPlatform::IndexedVersion& vers);
 
     /** Uninstall (i.e. remove all data about it) a resource, given its file name.
      *
