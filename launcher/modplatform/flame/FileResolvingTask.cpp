@@ -87,6 +87,30 @@ void Flame::FileResolvingTask::executeTask()
     m_task->start();
 }
 
+PackedResourceType getResourceType(int classId)
+{
+    switch (classId) {
+        case 17:  // Worlds
+            return PackedResourceType::WorldSave;
+        case 6:  // Mods
+            return PackedResourceType::Mod;
+        case 12:  // Resource Packs
+                  // return PackedResourceType::ResourcePack; // not really a resourcepack
+            /* fallthrough */
+        case 4546:  // Customization
+                    // return PackedResourceType::ShaderPack; // not really a shaderPack
+            /* fallthrough */
+        case 4471:  // Modpacks
+            /* fallthrough */
+        case 5:  // Bukkit Plugins
+            /* fallthrough */
+        case 4559:  // Addons
+            /* fallthrough */
+        default:
+            return PackedResourceType::UNKNOWN;
+    }
+}
+
 void Flame::FileResolvingTask::netJobFinished()
 {
     setProgress(1, 3);
@@ -232,6 +256,10 @@ void Flame::FileResolvingTask::getFlameProjects()
 
                 setStatus(tr("Parsing API response from CurseForge for '%1'...").arg(file->version.fileName));
                 FlameMod::loadIndexedPack(file->pack, entry_obj);
+                file->resourceType = getResourceType(Json::requireInteger(entry_obj, "classId", "modClassId"));
+                if (file->resourceType == PackedResourceType::WorldSave) {
+                    file->targetFolder = "saves";
+                }
             }
         } catch (Json::JsonException& e) {
             qDebug() << e.cause();
