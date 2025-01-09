@@ -41,6 +41,7 @@
 #include <QFileDialog>
 #include <QFileSystemModel>
 #include <QMessageBox>
+#include "DesktopServices.h"
 #include "FileIgnoreProxy.h"
 #include "QObjectPtr.h"
 #include "ui/dialogs/CustomMessageBox.h"
@@ -89,6 +90,11 @@ ExportInstanceDialog::ExportInstanceDialog(InstancePtr instance, QWidget* parent
 
     ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    }
 }
 
 ExportInstanceDialog::~ExportInstanceDialog()

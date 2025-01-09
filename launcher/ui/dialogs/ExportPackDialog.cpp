@@ -17,6 +17,7 @@
  */
 
 #include "ExportPackDialog.h"
+#include "DesktopServices.h"
 #include "minecraft/mod/ModFolderModel.h"
 #include "modplatform/ModIndex.h"
 #include "modplatform/flame/FlamePackExportTask.h"
@@ -106,6 +107,11 @@ ExportPackDialog::ExportPackDialog(InstancePtr instance, QWidget* parent, ModPla
 
     ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    }
 }
 
 ExportPackDialog::~ExportPackDialog()

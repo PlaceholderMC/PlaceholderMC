@@ -1,4 +1,5 @@
 #include "NewsDialog.h"
+#include "DesktopServices.h"
 #include "ui_NewsDialog.h"
 
 NewsDialog::NewsDialog(QList<NewsEntryPtr> entries, QWidget* parent) : QDialog(parent), ui(new Ui::NewsDialog())
@@ -23,6 +24,10 @@ NewsDialog::NewsDialog(QList<NewsEntryPtr> entries, QWidget* parent) : QDialog(p
 
     ui->currentArticleContentBrowser->setText(article_entry->content);
     ui->currentArticleContentBrowser->flush();
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    }
 }
 
 NewsDialog::~NewsDialog()
