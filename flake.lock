@@ -63,12 +63,29 @@
         "type": "github"
       }
     },
+    "qt-qrcodegenerator": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1731907326,
+        "narHash": "sha256-5+iYwsbX8wjKZPCy7ENj5HCYgOqzeSNLs/YrX2Vc7CQ=",
+        "owner": "nayuki",
+        "repo": "QR-Code-generator",
+        "rev": "f40366c40d8d1956081f7ec643d240c02a81df52",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nayuki",
+        "repo": "QR-Code-generator",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "flake-compat": "flake-compat",
         "libnbtplusplus": "libnbtplusplus",
         "nix-filter": "nix-filter",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "qt-qrcodegenerator": "qt-qrcodegenerator"
       }
     }
   },

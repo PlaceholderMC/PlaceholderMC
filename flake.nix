@@ -16,6 +16,11 @@
       flake = false;
     };
 
+    qt-qrcodegenerator = {
+      url = "github:nayuki/QR-Code-generator";
+      flake = false;
+    };
+
     nix-filter.url = "github:numtide/nix-filter";
 
     /*
@@ -23,12 +28,12 @@
 
       ```
       {
-        inputs.prismlauncher = {
-          url = "github:PrismLauncher/PrismLauncher";
-          inputs = {
-      	    flake-compat.follows = "";
-          };
+      inputs.prismlauncher = {
+        url = "github:PrismLauncher/PrismLauncher";
+        inputs = {
+         	    flake-compat.follows = "";
         };
+      };
       }
       ```
     */
@@ -44,6 +49,7 @@
       self,
       nixpkgs,
       libnbtplusplus,
+      qt-qrcodegenerator,
       nix-filter,
       ...
     }:
@@ -89,6 +95,7 @@
         prismlauncher-unwrapped = prev.callPackage ./nix/unwrapped.nix {
           inherit
             libnbtplusplus
+            qt-qrcodegenerator
             nix-filter
             self
             ;

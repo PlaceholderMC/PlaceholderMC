@@ -10,21 +10,19 @@
   jdk17,
   kdePackages,
   libnbtplusplus,
+  qt-qrcodegenerator,
   ninja,
   nix-filter,
   self,
   stripJavaArchivesHook,
   tomlplusplus,
   zlib,
-
   msaClientID ? null,
   gamemodeSupport ? stdenv.hostPlatform.isLinux,
 }:
-
 assert lib.assertMsg (
   gamemodeSupport -> stdenv.hostPlatform.isLinux
 ) "gamemodeSupport is only available on Linux.";
-
 stdenv.mkDerivation {
   pname = "prismlauncher-unwrapped";
   version = self.shortRev or self.dirtyShortRev or "unknown";
@@ -46,6 +44,9 @@ stdenv.mkDerivation {
   postUnpack = ''
     rm -rf source/libraries/libnbtplusplus
     ln -s ${libnbtplusplus} source/libraries/libnbtplusplus
+
+    rm -rf source/libraries/qt-qrcodegenerator/QR-Code-generator
+    ln -s ${qt-qrcodegenerator} source/libraries/qt-qrcodegenerator/QR-Code-generator
   '';
 
   nativeBuildInputs = [
