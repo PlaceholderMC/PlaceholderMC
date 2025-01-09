@@ -52,6 +52,8 @@ class Sink {
 
     virtual auto hasLocalData() -> bool = 0;
 
+    QString failReason() const { return m_fail_reason; }
+
     void addValidator(Validator* validator)
     {
         if (validator) {
@@ -95,5 +97,6 @@ class Sink {
 
    protected:
     std::vector<std::shared_ptr<Validator>> validators;
+    QString m_fail_reason;
 };
 }  // namespace Net

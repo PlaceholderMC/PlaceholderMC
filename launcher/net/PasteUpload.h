@@ -39,11 +39,12 @@
 #include <QNetworkReply>
 #include <QString>
 #include <array>
-#include <memory>
-#include "tasks/Task.h"
+#include "net/NetRequest.h"
 
-class PasteUpload : public Task {
-    Q_OBJECT
+class PasteSink;
+class PasteUpload : public Net::NetRequest {
+    friend PasteSink;
+
    public:
     enum PasteType : int {
         // 0x0.st
@@ -67,23 +68,17 @@ class PasteUpload : public Task {
 
     static std::array<PasteTypeInfo, 4> PasteTypes;
 
-    PasteUpload(QWidget* window, QString text, QString url, PasteType pasteType);
-    virtual ~PasteUpload();
+    PasteUpload(QString text, QString url, PasteType pasteType);
+    virtual ~PasteUpload() = default;
 
     QString pasteLink() { return m_pasteLink; }
 
-   protected:
-    virtual void executeTask();
+   private:
+    virtual QNetworkReply* getReply(QNetworkRequest&) override;
 
    private:
-    QWidget* m_window;
     QString m_pasteLink;
     QString m_baseUrl;
-    QString m_uploadUrl;
     PasteType m_pasteType;
     QByteArray m_text;
-    std::shared_ptr<QNetworkReply> m_reply;
-   public slots:
-    void downloadError(QNetworkReply::NetworkError);
-    void downloadFinished();
 };
