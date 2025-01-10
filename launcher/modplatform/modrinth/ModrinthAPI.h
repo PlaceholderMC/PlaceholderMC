@@ -192,4 +192,6 @@ class ModrinthAPI : public NetworkResourceAPI {
                                                            .arg(args.mcVersion.toString())
                                                            .arg(getModLoaderStrings(args.loader).join("\",\""));
     };
+
+    virtual Task::Ptr getVersionFromHash(QString hash, ModPlatform::IndexedVersion&) override;
 };

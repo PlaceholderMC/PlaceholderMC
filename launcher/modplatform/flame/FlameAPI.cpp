@@ -302,3 +302,50 @@ std::optional<ModPlatform::IndexedVersion> FlameAPI::getLatestVersion(QList<ModP
     }
     return {};
 }
+
+Task::Ptr FlameAPI::getVersionFromHash(QString hash, ModPlatform::IndexedVersion& output)
+{
+    auto response = std::make_shared<QByteArray>();
+    auto ver_task = matchFingerprints({ hash.toUInt() }, response);
+    QObject::connect(ver_task.get(), &Task::succeeded, [response, &output, hash] {
+        QJsonParseError parse_error{};
+        QJsonDocument doc = QJsonDocument::fromJson(*response, &parse_error);
+        if (parse_error.error != QJsonParseError::NoError) {
+            qWarning() << "Error while parsing JSON response from Flame::CurrentVersions at " << parse_error.offset
+                       << " reason: " << parse_error.errorString();
+            qWarning() << *response;
+            return;
+        }
+
+        try {
+            auto doc_obj = Json::requireObject(doc);
+            auto data_obj = Json::requireObject(doc_obj, "data");
+            auto data_arr = Json::requireArray(data_obj, "exactMatches");
+
+            if (data_arr.isEmpty()) {
+                qWarning() << "No matches found for fingerprint search!";
+                return;
+            }
+
+            for (auto match : data_arr) {
+                auto match_obj = Json::ensureObject(match, {});
+                auto file_obj = Json::ensureObject(match_obj, "file", {});
+
+                if (match_obj.isEmpty() || file_obj.isEmpty()) {
+                    qWarning() << "Fingerprint match is empty!";
+                    continue;
+                }
+
+                auto fingerprint = QString::number(Json::ensureVariant(file_obj, "fileFingerprint").toUInt());
+                if (fingerprint != hash)
+                    continue;
+                output = FlameMod::loadIndexedPackVersion(file_obj);
+            }
+
+        } catch (Json::JsonException& e) {
+            qDebug() << e.cause();
+            qDebug() << doc;
+        }
+    });
+    return ver_task;
+}
