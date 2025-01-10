@@ -19,15 +19,12 @@
      <item>
       <layout class="QVBoxLayout" name="selectedVLayout" stretch="2,1,3">
        <item>
-        <widget class="QLabel" name="selectedModel">
-         <property name="text">
+        <widget class="SkinOpenGLWidget" name="selectedModel">
+         <property name="text" stdset="0">
           <string/>
          </property>
-         <property name="scaledContents">
+         <property name="scaledContents" stdset="0">
           <bool>false</bool>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -188,6 +185,13 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SkinOpenGLWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>ui/dialogs/skins/draw/SkinOpenGLWidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
  *  Prism Launcher - Minecraft Launcher
- *  Copyright (c) 2023 Trial97 <alexandru.tripon97@gmail.com>
+ *  Copyright (c) 2023-2024 Trial97 <alexandru.tripon97@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
  */
 
 #include "SkinManageDialog.h"
+#include "ui/dialogs/skins/draw/SkinOpenGLWidget.h"
 #include "ui_SkinManageDialog.h"
 
 #include <FileSystem.h>
@@ -52,13 +53,16 @@
 #include "ui/instanceview/InstanceDelegate.h"
 
 SkinManageDialog::SkinManageDialog(QWidget* parent, MinecraftAccountPtr acct)
-    : QDialog(parent), m_acct(acct), ui(new Ui::SkinManageDialog), m_list(this, APPLICATION->settings()->get("SkinsDir").toString(), acct)
+    : QDialog(nullptr)
+    , m_acct(acct)
+    , m_ui(new Ui::SkinManageDialog)
+    , m_list(this, APPLICATION->settings()->get("SkinsDir").toString(), acct)
 {
-    ui->setupUi(this);
+    m_ui->setupUi(this);
 
     setWindowModality(Qt::WindowModal);
 
-    auto contentsWidget = ui->listView;
+    auto contentsWidget = m_ui->listView;
     contentsWidget->setViewMode(QListView::IconMode);
     contentsWidget->setFlow(QListView::LeftToRight);
     contentsWidget->setIconSize(QSize(48, 48));
@@ -88,28 +92,28 @@ SkinManageDialog::SkinManageDialog(QWidget* parent, MinecraftAccountPtr acct)
 
     connect(contentsWidget->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)),
             SLOT(selectionChanged(QItemSelection, QItemSelection)));
-    connect(ui->listView, &QListView::customContextMenuRequested, this, &SkinManageDialog::show_context_menu);
+    connect(m_ui->listView, &QListView::customContextMenuRequested, this, &SkinManageDialog::show_context_menu);
 
     setupCapes();
 
-    ui->listView->setCurrentIndex(m_list.index(m_list.getSelectedAccountSkin()));
+    m_ui->listView->setCurrentIndex(m_list.index(m_list.getSelectedAccountSkin()));
 
-    ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+    m_ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+    m_ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
 }
 
 SkinManageDialog::~SkinManageDialog()
 {
-    delete ui;
+    delete m_ui;
 }
 
 void SkinManageDialog::activated(QModelIndex index)
 {
-    m_selected_skin = index.data(Qt::UserRole).toString();
+    m_selectedSkinKey = index.data(Qt::UserRole).toString();
     accept();
 }
 
-void SkinManageDialog::selectionChanged(QItemSelection selected, QItemSelection deselected)
+void SkinManageDialog::selectionChanged(QItemSelection selected, [[maybe_unused]] QItemSelection deselected)
 {
     if (selected.empty())
         return;
@@ -117,19 +121,20 @@ void SkinManageDialog::selectionChanged(QItemSelection selected, QItemSelection 
     QString key = selected.first().indexes().first().data(Qt::UserRole).toString();
     if (key.isEmpty())
         return;
-    m_selected_skin = key;
-    auto skin = m_list.skin(key);
-    if (!skin || !skin->isValid())
+    m_selectedSkinKey = key;
+    auto skin = getSelectedSkin();
+    if (!skin)
         return;
-    ui->selectedModel->setPixmap(skin->getTexture().scaled(size() * (1. / 3), Qt::KeepAspectRatio, Qt::FastTransformation));
-    ui->capeCombo->setCurrentIndex(m_capes_idx.value(skin->getCapeId()));
-    ui->steveBtn->setChecked(skin->getModel() == SkinModel::CLASSIC);
-    ui->alexBtn->setChecked(skin->getModel() == SkinModel::SLIM);
+
+    m_ui->selectedModel->updateScene(skin);
+    m_ui->capeCombo->setCurrentIndex(m_capesIdx.value(skin->getCapeId()));
+    m_ui->steveBtn->setChecked(skin->getModel() == SkinModel::CLASSIC);
+    m_ui->alexBtn->setChecked(skin->getModel() == SkinModel::SLIM);
 }
 
 void SkinManageDialog::delayed_scroll(QModelIndex model_index)
 {
-    auto contentsWidget = ui->listView;
+    auto contentsWidget = m_ui->listView;
     contentsWidget->scrollTo(model_index);
 }
 
@@ -152,23 +157,19 @@ void SkinManageDialog::on_fileBtn_clicked()
     }
 }
 
-QPixmap previewCape(QPixmap capeImage)
+QPixmap previewCape(QImage capeImage)
 {
-    QPixmap preview = QPixmap(10, 16);
-    QPainter painter(&preview);
-    painter.drawPixmap(0, 0, capeImage.copy(1, 1, 10, 16));
-    return preview.scaled(80, 128, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+    return QPixmap::fromImage(capeImage.copy(1, 1, 10, 16).scaled(80, 128, Qt::IgnoreAspectRatio, Qt::FastTransformation));
 }
-
 void SkinManageDialog::setupCapes()
 {
     // FIXME: add a model for this, download/refresh the capes on demand
     auto& accountData = *m_acct->accountData();
     int index = 0;
-    ui->capeCombo->addItem(tr("No Cape"), QVariant());
+    m_ui->capeCombo->addItem(tr("No Cape"), QVariant());
     auto currentCape = accountData.minecraftProfile.currentCape;
     if (currentCape.isEmpty()) {
-        ui->capeCombo->setCurrentIndex(index);
+        m_ui->capeCombo->setCurrentIndex(index);
     }
 
     auto capesDir = FS::PathCombine(m_list.getDir(), "capes");
@@ -177,9 +178,9 @@ void SkinManageDialog::setupCapes()
     for (auto& cape : accountData.minecraftProfile.capes) {
         auto path = FS::PathCombine(capesDir, cape.id + ".png");
         if (cape.data.size()) {
-            QPixmap capeImage;
+            QImage capeImage;
             if (capeImage.loadFromData(cape.data, "PNG") && capeImage.save(path)) {
-                m_capes[cape.id] = previewCape(capeImage);
+                m_capes[cape.id] = capeImage;
                 continue;
             }
         }
@@ -197,46 +198,48 @@ void SkinManageDialog::setupCapes()
     }
     for (auto& cape : accountData.minecraftProfile.capes) {
         index++;
-        QPixmap capeImage;
+        QImage capeImage;
         if (!m_capes.contains(cape.id)) {
             auto path = FS::PathCombine(capesDir, cape.id + ".png");
             if (QFileInfo(path).exists() && capeImage.load(path)) {
-                capeImage = previewCape(capeImage);
                 m_capes[cape.id] = capeImage;
             }
         }
         if (!capeImage.isNull()) {
-            ui->capeCombo->addItem(capeImage, cape.alias, cape.id);
+            m_ui->capeCombo->addItem(previewCape(capeImage), cape.alias, cape.id);
         } else {
-            ui->capeCombo->addItem(cape.alias, cape.id);
+            m_ui->capeCombo->addItem(cape.alias, cape.id);
         }
 
-        m_capes_idx[cape.id] = index;
+        m_capesIdx[cape.id] = index;
     }
 }
 
 void SkinManageDialog::on_capeCombo_currentIndexChanged(int index)
 {
-    auto id = ui->capeCombo->currentData();
+    auto id = m_ui->capeCombo->currentData();
     auto cape = m_capes.value(id.toString(), {});
     if (!cape.isNull()) {
-        ui->capeImage->setPixmap(cape.scaled(size() * (1. / 3), Qt::KeepAspectRatio, Qt::FastTransformation));
+        m_ui->capeImage->setPixmap(previewCape(cape).scaled(size() * (1. / 3), Qt::KeepAspectRatio, Qt::FastTransformation));
     }
-    if (auto skin = m_list.skin(m_selected_skin); skin) {
+    m_ui->selectedModel->updateCape(cape);
+    if (auto skin = getSelectedSkin(); skin) {
         skin->setCapeId(id.toString());
+        m_ui->selectedModel->updateScene(skin);
     }
 }
 
 void SkinManageDialog::on_steveBtn_toggled(bool checked)
 {
-    if (auto skin = m_list.skin(m_selected_skin); skin) {
+    if (auto skin = getSelectedSkin(); skin) {
         skin->setModel(checked ? SkinModel::CLASSIC : SkinModel::SLIM);
+        m_ui->selectedModel->updateScene(skin);
     }
 }
 
 void SkinManageDialog::accept()
 {
-    auto skin = m_list.skin(m_selected_skin);
+    auto skin = m_list.skin(m_selectedSkinKey);
     if (!skin) {
         reject();
         return;
@@ -286,15 +289,15 @@ void SkinManageDialog::on_resetBtn_clicked()
 void SkinManageDialog::show_context_menu(const QPoint& pos)
 {
     QMenu myMenu(tr("Context menu"), this);
-    myMenu.addAction(ui->action_Rename_Skin);
-    myMenu.addAction(ui->action_Delete_Skin);
+    myMenu.addAction(m_ui->action_Rename_Skin);
+    myMenu.addAction(m_ui->action_Delete_Skin);
 
-    myMenu.exec(ui->listView->mapToGlobal(pos));
+    myMenu.exec(m_ui->listView->mapToGlobal(pos));
 }
 
 bool SkinManageDialog::eventFilter(QObject* obj, QEvent* ev)
 {
-    if (obj == ui->listView) {
+    if (obj == m_ui->listView) {
         if (ev->type() == QEvent::KeyPress) {
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(ev);
             switch (keyEvent->key()) {
@@ -314,22 +317,22 @@ bool SkinManageDialog::eventFilter(QObject* obj, QEvent* ev)
 
 void SkinManageDialog::on_action_Rename_Skin_triggered(bool checked)
 {
-    if (!m_selected_skin.isEmpty()) {
-        ui->listView->edit(ui->listView->currentIndex());
+    if (!m_selectedSkinKey.isEmpty()) {
+        m_ui->listView->edit(m_ui->listView->currentIndex());
     }
 }
 
 void SkinManageDialog::on_action_Delete_Skin_triggered(bool checked)
 {
-    if (m_selected_skin.isEmpty())
+    if (m_selectedSkinKey.isEmpty())
         return;
 
-    if (m_list.getSkinIndex(m_selected_skin) == m_list.getSelectedAccountSkin()) {
+    if (m_list.getSkinIndex(m_selectedSkinKey) == m_list.getSelectedAccountSkin()) {
         CustomMessageBox::selectable(this, tr("Delete error"), tr("Can not delete skin that is in use."), QMessageBox::Warning)->exec();
         return;
     }
 
-    auto skin = m_list.skin(m_selected_skin);
+    auto skin = m_list.skin(m_selectedSkinKey);
     if (!skin)
         return;
 
@@ -341,15 +344,15 @@ void SkinManageDialog::on_action_Delete_Skin_triggered(bool checked)
                         ->exec();
 
     if (response == QMessageBox::Yes) {
-        if (!m_list.deleteSkin(m_selected_skin, true)) {
-            m_list.deleteSkin(m_selected_skin, false);
+        if (!m_list.deleteSkin(m_selectedSkinKey, true)) {
+            m_list.deleteSkin(m_selectedSkinKey, false);
         }
     }
 }
 
 void SkinManageDialog::on_urlBtn_clicked()
 {
-    auto url = QUrl(ui->urlLine->text());
+    auto url = QUrl(m_ui->urlLine->text());
     if (!url.isValid()) {
         CustomMessageBox::selectable(this, tr("Invalid url"), tr("Invalid url"), QMessageBox::Critical)->show();
         return;
@@ -366,13 +369,13 @@ void SkinManageDialog::on_urlBtn_clicked()
     if (!s.isValid()) {
         CustomMessageBox::selectable(this, tr("URL is not a valid skin"),
                                      QFileInfo::exists(path) ? tr("Skin images must be 64x64 or 64x32 pixel PNG files.")
-                                                             : tr("Unable to download the skin: '%1'.").arg(ui->urlLine->text()),
+                                                             : tr("Unable to download the skin: '%1'.").arg(m_ui->urlLine->text()),
                                      QMessageBox::Critical)
             ->show();
         QFile::remove(path);
         return;
     }
-    ui->urlLine->setText("");
+    m_ui->urlLine->setText("");
     if (QFileInfo(path).suffix().isEmpty()) {
         QFile::rename(path, path + ".png");
     }
@@ -405,7 +408,7 @@ class WaitTask : public Task {
 
 void SkinManageDialog::on_userBtn_clicked()
 {
-    auto user = ui->urlLine->text();
+    auto user = m_ui->urlLine->text();
     if (user.isEmpty()) {
         return;
     }
@@ -499,7 +502,7 @@ void SkinManageDialog::on_userBtn_clicked()
         QFile::remove(path);
         return;
     }
-    ui->urlLine->setText("");
+    m_ui->urlLine->setText("");
     s.setModel(mcProfile.skin.variant.toUpper() == "SLIM" ? SkinModel::SLIM : SkinModel::CLASSIC);
     s.setURL(mcProfile.skin.url);
     if (m_capes.contains(mcProfile.currentCape)) {
@@ -513,14 +516,24 @@ void SkinManageDialog::resizeEvent(QResizeEvent* event)
     QWidget::resizeEvent(event);
     QSize s = size() * (1. / 3);
 
-    if (auto skin = m_list.skin(m_selected_skin); skin) {
-        if (skin->isValid()) {
-            ui->selectedModel->setPixmap(skin->getTexture().scaled(s, Qt::KeepAspectRatio, Qt::FastTransformation));
-        }
-    }
-    auto id = ui->capeCombo->currentData();
+    m_ui->selectedModel->updateScene(getSelectedSkin());
+    auto id = m_ui->capeCombo->currentData();
     auto cape = m_capes.value(id.toString(), {});
     if (!cape.isNull()) {
-        ui->capeImage->setPixmap(cape.scaled(s, Qt::KeepAspectRatio, Qt::FastTransformation));
+        m_ui->capeImage->setPixmap(previewCape(cape).scaled(s, Qt::KeepAspectRatio, Qt::FastTransformation));
     }
+    m_ui->selectedModel->updateCape(cape);
+}
+
+SkinModel* SkinManageDialog::getSelectedSkin()
+{
+    if (auto skin = m_list.skin(m_selectedSkinKey); skin && skin->isValid()) {
+        return skin;
+    }
+    return nullptr;
+}
+
+QHash<QString, QImage> SkinManageDialog::capes()
+{
+    return m_capes;
 }

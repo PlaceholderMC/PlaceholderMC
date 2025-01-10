@@ -43,7 +43,7 @@ class SkinList : public QAbstractListModel {
     virtual bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
     virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
-    bool deleteSkin(const QString& key, const bool trash);
+    bool deleteSkin(const QString& key, bool trash);
 
     void installSkins(const QStringList& iconFiles);
     QString installSkin(const QString& file, const QString& name = {});
@@ -73,8 +73,8 @@ class SkinList : public QAbstractListModel {
 
    private:
     shared_qobject_ptr<QFileSystemWatcher> m_watcher;
-    bool is_watching;
-    QVector<SkinModel> m_skin_list;
+    bool m_isWatching;
+    QVector<SkinModel> m_skinList;
     QDir m_dir;
     MinecraftAccountPtr m_acct;
 };

@@ -23,7 +23,7 @@ jobs:
         run:  
           sudo apt-get -y update
 
-          sudo apt-get -y install ninja-build extra-cmake-modules scdoc qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libqt5core5a libqt5network5 libqt5gui5 libqt5networkauth5 libqt5networkauth5-dev
+          sudo apt-get -y install ninja-build extra-cmake-modules scdoc qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools libqt5core5a libqt5network5 libqt5gui5 libqt5networkauth5 libqt5networkauth5-dev libqt5opengl5 libqt5opengl5-dev
 
       - name: Configure and Build
         run: |
