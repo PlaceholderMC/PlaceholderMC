@@ -56,6 +56,8 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
+            name: "Linux"
+            architecture: "x86_64"
             qt_ver: 5
             qt_host: linux
             qt_arch: ""
@@ -63,10 +65,21 @@ jobs:
             qt_modules: "qtnetworkauth"
 
           - os: ubuntu-20.04
+            name: "Linux"
+            architecture: "x86_64"
             qt_ver: 6
             qt_host: linux
             qt_arch: ""
             qt_version: "6.5.3"
+            qt_modules: "qt5compat qtimageformats qtnetworkauth"
+
+          - os: ubuntu-24.04-arm
+            name: "Linux-arm64"
+            architecture: "aarch64"
+            qt_ver: 6
+            qt_host: "linux_arm64"
+            qt_arch: "linux_gcc_arm64"
+            qt_version: "6.8.1"
             qt_modules: "qt5compat qtimageformats qtnetworkauth"
 
           - os: windows-2022
@@ -165,8 +178,10 @@ jobs:
         run: |
           choco install ccache --version 4.7.1
 
+        # TODO: Run on aarch64-linux
+        # https://github.com/hendrikmuhs/ccache-action/issues/279
       - name: Setup ccache
-        if: (runner.os != 'Windows' || matrix.msystem == '') && inputs.build_type == 'Debug'
+        if: (runner.os != 'Windows' || matrix.msystem == '') && inputs.build_type == 'Debug' && (!(runner.os == 'Linux' && matrix.architecture == 'aarch64'))
         uses: hendrikmuhs/ccache-action@v1.2.16
         with:
           key: ${{ matrix.os }}-qt${{ matrix.qt_ver }}-${{ matrix.architecture }}
@@ -190,8 +205,10 @@ jobs:
           ccache -p  # Show config
           ccache -z  # Zero stats
 
+        # TODO: Run on aarch64-linux
+        # See above
       - name: Use ccache on Debug builds only
-        if: inputs.build_type == 'Debug'
+        if: inputs.build_type == 'Debug' && (!(runner.os == 'Linux' && matrix.architecture == 'aarch64'))
         shell: bash
         run: |
           echo "CCACHE_VAR=ccache" >> $GITHUB_ENV
@@ -232,11 +249,14 @@ jobs:
 
       - name: Install Qt (macOS, Linux & Windows MSVC)
         if: matrix.msystem == ''
-        uses: jurplel/install-qt-action@v3
+        # FIXME: THIS IS A FORK AND SHOULD NOT MAKE IT TO PROD!!!!
+        # REMOVE BEFORE MERGING!!!!!!!!!!!!
+        uses: jdpurcell/install-qt-action@b45c67aaa9e0ea77e59a7031ec14a12d5ddf4b35
         with:
           aqtversion: "==3.1.*"
           py7zrversion: ">=0.20.2"
           version: ${{ matrix.qt_version }}
+          host: ${{ matrix.qt_host }}
           target: "desktop"
           arch: ${{ matrix.qt_arch }}
           modules: ${{ matrix.qt_modules }}
@@ -253,13 +273,12 @@ jobs:
       - name: Prepare AppImage (Linux)
         if: runner.os == 'Linux' && matrix.qt_ver != 5
         run: |
-          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage"
-          wget "https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage"
-          wget "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage"
+          wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-${{ matrix.architecture }}.AppImage"
+          wget "https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-${{ matrix.architecture }}.AppImage"
 
-          wget "https://github.com/AppImageCommunity/AppImageUpdate/releases/download/continuous/AppImageUpdate-x86_64.AppImage"
+          wget "https://github.com/AppImageCommunity/AppImageUpdate/releases/download/continuous/AppImageUpdate-${{ matrix.architecture }}.AppImage"
 
-          sudo apt install libopengl0
+          sudo apt install fuse libopengl0
 
       - name: Add QT_HOST_PATH var (Windows MSVC arm64)
         if: runner.os == 'Windows' && matrix.architecture == 'arm64'
@@ -310,7 +329,7 @@ jobs:
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
         run: |
-          cmake -S . -B ${{ env.BUILD_DIR }} -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DENABLE_LTO=ON -DLauncher_ENABLE_JAVA_DOWNLOADER=ON -DLauncher_BUILD_PLATFORM=official -DCMAKE_C_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DCMAKE_CXX_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DLauncher_QT_VERSION_MAJOR=${{ matrix.qt_ver }} -DLauncher_BUILD_ARTIFACT=Linux-Qt${{ matrix.qt_ver }} -G Ninja
+          cmake -S . -B ${{ env.BUILD_DIR }} -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DENABLE_LTO=ON -DLauncher_ENABLE_JAVA_DOWNLOADER=ON -DLauncher_BUILD_PLATFORM=official -DCMAKE_C_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DCMAKE_CXX_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DLauncher_QT_VERSION_MAJOR=${{ matrix.qt_ver }} -DLauncher_BUILD_ARTIFACT=${{ matrix.name }}-Qt${{ matrix.qt_ver }} -G Ninja
 
       ##
       # BUILD
@@ -512,26 +531,26 @@ jobs:
           mv ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/metainfo/org.prismlauncher.PrismLauncher.metainfo.xml ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/metainfo/org.prismlauncher.PrismLauncher.appdata.xml
           export "NO_APPSTREAM=1" # we have to skip appstream checking because appstream on ubuntu 20.04 is outdated
 
-          export OUTPUT="PrismLauncher-Linux-x86_64.AppImage"
+          export OUTPUT="PrismLauncher-Linux-${{ matrix.architecture }}.AppImage"
 
           chmod +x linuxdeploy-*.AppImage
 
           mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib
           mkdir -p ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
 
-          cp -r ${{ runner.workspace }}/Qt/${{ matrix.qt_version }}/gcc_64/plugins/iconengines/* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
+          cp -r ${{ runner.workspace }}/Qt/${{ matrix.qt_version }}/gcc_*64/plugins/iconengines/* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/plugins/iconengines
 
-          cp /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
-          cp /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
-          cp /usr/lib/x86_64-linux-gnu/libOpenGL.so.0* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libcrypto.so.* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libssl.so.* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libOpenGL.so.0* ${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib/
 
           LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${{ env.INSTALL_APPIMAGE_DIR }}/usr/lib"
           export LD_LIBRARY_PATH
 
-          chmod +x AppImageUpdate-x86_64.AppImage
-          cp AppImageUpdate-x86_64.AppImage ${{ env.INSTALL_APPIMAGE_DIR }}/usr/bin
+          chmod +x AppImageUpdate-${{ matrix.architecture }}.AppImage
+          cp AppImageUpdate-${{ matrix.architecture }}.AppImage ${{ env.INSTALL_APPIMAGE_DIR }}/usr/bin
 
-          export UPDATE_INFORMATION="gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|PrismLauncher-Linux-x86_64.AppImage.zsync" 
+          export UPDATE_INFORMATION="gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|PrismLauncher-Linux-${{ matrix.architecture }}.AppImage.zsync"
 
           if [ '${{ secrets.GPG_PRIVATE_KEY_ID }}' != '' ]; then
             export SIGN=1
@@ -543,23 +562,23 @@ jobs:
             echo ":warning: Skipped code signing for Linux AppImage, as gpg key was not present." >> $GITHUB_STEP_SUMMARY
           fi
 
-          ./linuxdeploy-x86_64.AppImage --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg
+          ./linuxdeploy-${{ matrix.architecture }}.AppImage --appdir ${{ env.INSTALL_APPIMAGE_DIR }} --output appimage --plugin qt -i ${{ env.INSTALL_APPIMAGE_DIR }}/usr/share/icons/hicolor/scalable/apps/org.prismlauncher.PrismLauncher.svg
 
-          mv "PrismLauncher-Linux-x86_64.AppImage" "PrismLauncher-Linux-${{ env.VERSION }}-${{ inputs.build_type }}-x86_64.AppImage"
+          mv "PrismLauncher-Linux-${{ matrix.architecture }}.AppImage" "PrismLauncher-Linux-${{ env.VERSION }}-${{ inputs.build_type }}-${{ matrix.architecture }}.AppImage"
 
       - name: Package (Linux, portable)
         if: runner.os == 'Linux'
         run: |
-          cmake -S . -B ${{ env.BUILD_DIR }} -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PORTABLE_DIR }} -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DENABLE_LTO=ON -DLauncher_BUILD_PLATFORM=official -DCMAKE_C_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DCMAKE_CXX_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DLauncher_QT_VERSION_MAJOR=${{ matrix.qt_ver }} -DLauncher_BUILD_ARTIFACT=Linux-Qt${{ matrix.qt_ver }} -DINSTALL_BUNDLE=full -G Ninja
+          cmake -S . -B ${{ env.BUILD_DIR }} -DCMAKE_INSTALL_PREFIX=${{ env.INSTALL_PORTABLE_DIR }} -DCMAKE_BUILD_TYPE=${{ inputs.build_type }} -DENABLE_LTO=ON -DLauncher_BUILD_PLATFORM=official -DCMAKE_C_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DCMAKE_CXX_COMPILER_LAUNCHER=${{ env.CCACHE_VAR }} -DLauncher_QT_VERSION_MAJOR=${{ matrix.qt_ver }} -DLauncher_BUILD_ARTIFACT=${{ matrix.name }}-Qt${{ matrix.qt_ver }} -DINSTALL_BUNDLE=full -G Ninja
           cmake --install ${{ env.BUILD_DIR }}
           cmake --install ${{ env.BUILD_DIR }} --component portable
 
           mkdir  ${{ env.INSTALL_PORTABLE_DIR }}/lib
-          cp /lib/x86_64-linux-gnu/libbz2.so.1.0 ${{ env.INSTALL_PORTABLE_DIR }}/lib
-          cp /usr/lib/x86_64-linux-gnu/libgobject-2.0.so.0 ${{ env.INSTALL_PORTABLE_DIR }}/lib
-          cp /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 ${{ env.INSTALL_PORTABLE_DIR }}/lib
-          cp /usr/lib/x86_64-linux-gnu/libssl.so.1.1 ${{ env.INSTALL_PORTABLE_DIR }}/lib
-          cp /usr/lib/x86_64-linux-gnu/libffi.so.7 ${{ env.INSTALL_PORTABLE_DIR }}/lib
+          cp /lib/${{ matrix.architecture }}-linux-gnu/libbz2.so.1.0 ${{ env.INSTALL_PORTABLE_DIR }}/lib
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libgobject-2.0.so.0 ${{ env.INSTALL_PORTABLE_DIR }}/lib
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libcrypto.so.* ${{ env.INSTALL_PORTABLE_DIR }}/lib
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libssl.so.* ${{ env.INSTALL_PORTABLE_DIR }}/lib
+          cp /usr/lib/${{ matrix.architecture }}-linux-gnu/libffi.so.*.* ${{ env.INSTALL_PORTABLE_DIR }}/lib
           mv ${{ env.INSTALL_PORTABLE_DIR }}/bin/*.so* ${{ env.INSTALL_PORTABLE_DIR }}/lib
 
           for l in $(find ${{ env.INSTALL_PORTABLE_DIR }} -type f); do l=${l#$(pwd)/}; l=${l#${{ env.INSTALL_PORTABLE_DIR }}/}; l=${l#./}; echo $l; done > ${{ env.INSTALL_PORTABLE_DIR }}/manifest.txt
@@ -609,22 +628,22 @@ jobs:
         if: runner.os == 'Linux' && matrix.qt_ver != 5
         uses: actions/upload-artifact@v4
         with:
-          name: PrismLauncher-${{ runner.os }}-Qt6-Portable-${{ env.VERSION }}-${{ inputs.build_type }}
+          name: PrismLauncher-${{ matrix.name }}-Qt6-Portable-${{ env.VERSION }}-${{ inputs.build_type }}
           path: PrismLauncher-portable.tar.gz
 
       - name: Upload AppImage (Linux)
         if: runner.os == 'Linux' && matrix.qt_ver != 5
         uses: actions/upload-artifact@v4
         with:
-          name: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-x86_64.AppImage
-          path: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-x86_64.AppImage
+          name: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-${{ matrix.architecture }}.AppImage
+          path: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-${{ matrix.architecture }}.AppImage
 
       - name: Upload AppImage Zsync (Linux)
         if: runner.os == 'Linux' && matrix.qt_ver != 5
         uses: actions/upload-artifact@v4
         with:
-          name: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-x86_64.AppImage.zsync
-          path: PrismLauncher-Linux-x86_64.AppImage.zsync
+          name: PrismLauncher-${{ runner.os }}-${{ env.VERSION }}-${{ inputs.build_type }}-${{ matrix.architecture }}.AppImage.zsync
+          path: PrismLauncher-Linux-${{ matrix.architecture }}.AppImage.zsync
 
       - name: ccache stats (Windows MinGW-w64)
         if: runner.os == 'Windows' && matrix.msystem != ''
