@@ -167,6 +167,10 @@ Task::Ptr GetModDependenciesTask::getProjectInfoTask(std::shared_ptr<PackDepende
             qWarning() << "Error while reading mod info: " << e.cause();
         }
     });
+    QObject::connect(info.get(), &NetJob::failed, [this, info, pDep] {
+        removePack(pDep->pack->addonId);
+        m_failed.remove(info.get());
+    });
     return info;
 }
 
@@ -255,6 +259,10 @@ Task::Ptr GetModDependenciesTask::prepareDependencyTask(const ModPlatform::Depen
     };
 
     auto version = provider.api->getDependencyVersion(std::move(args), std::move(callbacks));
+    QObject::connect(version.get(), &NetJob::failed, [this, version, pDep] {
+        removePack(pDep->pack->addonId);
+        m_failed.remove(version.get());
+    });
     tasks->addTask(version);
     return tasks;
 }
