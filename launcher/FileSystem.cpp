@@ -915,6 +915,11 @@ QString getDesktopDir()
     return QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 }
 
+QString getApplicationsDir()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation);
+}
+
 // Cross-platform Shortcut creation
 bool createShortcut(QString destination, QString target, QStringList args, QString name, QString icon)
 {
@@ -926,16 +931,7 @@ bool createShortcut(QString destination, QString target, QStringList args, QStri
         return false;
     }
 #if defined(Q_OS_MACOS)
-    // Create the Application
-    QDir applicationDirectory =
-        QStandardPaths::writableLocation(QStandardPaths::ApplicationsLocation) + "/" + BuildConfig.LAUNCHER_NAME + " Instances/";
-
-    if (!applicationDirectory.mkpath(".")) {
-        qWarning() << "Couldn't create application directory";
-        return false;
-    }
-
-    QDir application = applicationDirectory.path() + "/" + name + ".app/";
+    QDir application = destination + ".app/";
 
     if (application.exists()) {
         qWarning() << "Application already exists!";
