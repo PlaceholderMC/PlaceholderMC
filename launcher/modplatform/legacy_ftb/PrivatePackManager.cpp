@@ -44,12 +44,8 @@ namespace LegacyFTB {
 void PrivatePackManager::load()
 {
     try {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         auto foo = QString::fromUtf8(FS::read(m_filename)).split('\n', Qt::SkipEmptyParts);
         currentPacks = QSet<QString>(foo.begin(), foo.end());
-#else
-        currentPacks = QString::fromUtf8(FS::read(m_filename)).split('\n', QString::SkipEmptyParts).toSet();
-#endif
 
         dirty = false;
     } catch (...) {

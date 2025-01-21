@@ -37,11 +37,7 @@ void DataMigrationTask::dryRunFinished()
     disconnect(&m_copyFutureWatcher, &QFutureWatcher<bool>::finished, this, &DataMigrationTask::dryRunFinished);
     disconnect(&m_copyFutureWatcher, &QFutureWatcher<bool>::canceled, this, &DataMigrationTask::dryRunAborted);
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     if (!m_copyFuture.isValid() || !m_copyFuture.result()) {
-#else
-    if (!m_copyFuture.result()) {
-#endif
         emitFailed(tr("Failed to scan source path."));
         return;
     }
@@ -75,11 +71,7 @@ void DataMigrationTask::copyFinished()
     disconnect(&m_copyFutureWatcher, &QFutureWatcher<bool>::finished, this, &DataMigrationTask::copyFinished);
     disconnect(&m_copyFutureWatcher, &QFutureWatcher<bool>::canceled, this, &DataMigrationTask::copyAborted);
 
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
     if (!m_copyFuture.isValid() || !m_copyFuture.result()) {
-#else
-    if (!m_copyFuture.result()) {
-#endif
         emitFailed(tr("Some paths could not be copied!"));
         return;
     }

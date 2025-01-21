@@ -66,9 +66,6 @@ QString getCreditsHtml()
 {
     QString output;
     QTextStream stream(&output);
-#if QT_VERSION <= QT_VERSION_CHECK(6, 0, 0)
-    stream.setCodec(QTextCodec::codecForName("UTF-8"));
-#endif
     stream << "<center>\n";
 
     //: %1 is the name of the launcher, determined at build time, e.g. "Prism Launcher Developers"

@@ -547,17 +547,7 @@ void ResourceModel::addPack(ModPlatform::IndexedPack::Ptr pack,
 void ResourceModel::removePack(const QString& rem)
 {
     auto pred = [&rem](const DownloadTaskPtr i) { return rem == i->getName(); };
-#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
     m_selected.removeIf(pred);
-#else
-    {
-        for (auto it = m_selected.begin(); it != m_selected.end();)
-            if (pred(*it))
-                it = m_selected.erase(it);
-            else
-                ++it;
-    }
-#endif
     auto pack = std::find_if(m_packs.begin(), m_packs.end(), [&rem](const ModPlatform::IndexedPack::Ptr i) { return rem == i->name; });
     if (pack == m_packs.end()) {  // ignore it if is not in the current search
         return;

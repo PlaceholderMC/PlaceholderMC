@@ -49,14 +49,10 @@ void PostLaunchCommand::executeTask()
 {
     auto cmd = m_parent->substituteVariables(m_command);
     emit logLine(tr("Running Post-Launch command: %1").arg(cmd), MessageLevel::Launcher);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     auto args = QProcess::splitCommand(cmd);
 
     const QString program = args.takeFirst();
     m_process.start(program, args);
-#else
-    m_process.start(cmd);
-#endif
 }
 
 void PostLaunchCommand::on_state(LoggedProcess::State state)

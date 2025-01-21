@@ -137,11 +137,7 @@ void JavaChecker::finished(int exitcode, QProcess::ExitStatus status)
 
     QMap<QString, QString> results;
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList lines = m_stdout.split("\n", Qt::SkipEmptyParts);
-#else
-    QStringList lines = m_stdout.split("\n", QString::SkipEmptyParts);
-#endif
     for (QString line : lines) {
         line = line.trimmed();
         // NOTE: workaround for GH-4125, where garbage is getting printed into stdout on bedrock linux
@@ -149,11 +145,7 @@ void JavaChecker::finished(int exitcode, QProcess::ExitStatus status)
             continue;
         }
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
         auto parts = line.split('=', Qt::SkipEmptyParts);
-#else
-        auto parts = line.split('=', QString::SkipEmptyParts);
-#endif
         if (parts.size() != 2 || parts[0].isEmpty() || parts[1].isEmpty()) {
             continue;
         } else {

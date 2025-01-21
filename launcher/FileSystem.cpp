@@ -695,9 +695,6 @@ bool deletePath(QString path)
 
 bool trash(QString path, QString* pathInTrash)
 {
-#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
-    return false;
-#else
     // FIXME: Figure out trash in Flatpak. Qt seemingly doesn't use the Trash portal
     if (DesktopServices::isFlatpak())
         return false;
@@ -706,7 +703,6 @@ bool trash(QString path, QString* pathInTrash)
         return false;
 #endif
     return QFile::moveToTrash(path, pathInTrash);
-#endif
 }
 
 QString PathCombine(const QString& path1, const QString& path2)
@@ -740,11 +736,7 @@ int pathDepth(const QString& path)
 
     QFileInfo info(path);
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    auto parts = QDir::toNativeSeparators(info.path()).split(QDir::separator(), QString::SkipEmptyParts);
-#else
     auto parts = QDir::toNativeSeparators(info.path()).split(QDir::separator(), Qt::SkipEmptyParts);
-#endif
 
     int numParts = parts.length();
     numParts -= parts.count(".");
@@ -764,11 +756,7 @@ QString pathTruncate(const QString& path, int depth)
         return pathTruncate(trunc, depth);
     }
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-    auto parts = QDir::toNativeSeparators(trunc).split(QDir::separator(), QString::SkipEmptyParts);
-#else
     auto parts = QDir::toNativeSeparators(trunc).split(QDir::separator(), Qt::SkipEmptyParts);
-#endif
 
     if (parts.startsWith(".") && !path.startsWith(".")) {
         parts.removeFirst();

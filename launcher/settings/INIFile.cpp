@@ -103,12 +103,7 @@ QString unescape(QString orig)
 QString unquote(QString str)
 {
     if ((str.contains(QChar(';')) || str.contains(QChar('=')) || str.contains(QChar(','))) && str.endsWith("\"") && str.startsWith("\"")) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-        str = str.remove(0, 1);
-        str = str.remove(str.size() - 1, 1);
-#else
-        str = str.removeFirst().removeLast();
-#endif
+        str = str.mid(1, str.length() - 2);
     }
     return str;
 }
@@ -116,9 +111,6 @@ QString unquote(QString str)
 bool parseOldFileFormat(QIODevice& device, QSettings::SettingsMap& map)
 {
     QTextStream in(device.readAll());
-#if QT_VERSION <= QT_VERSION_CHECK(6, 0, 0)
-    in.setCodec("UTF-8");
-#endif
 
     QStringList lines = in.readAll().split('\n');
     for (int i = 0; i < lines.count(); i++) {

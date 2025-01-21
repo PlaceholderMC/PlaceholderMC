@@ -449,11 +449,7 @@ QList<InstanceId> InstanceList::discoverInstances()
         out.append(id);
         qDebug() << "Found instance ID" << id;
     }
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     instanceSet = QSet<QString>(out.begin(), out.end());
-#else
-    instanceSet = out.toSet();
-#endif
     m_instancesProbed = true;
     return out;
 }

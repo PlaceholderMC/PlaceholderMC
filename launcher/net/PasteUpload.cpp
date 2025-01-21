@@ -130,11 +130,7 @@ void PasteUpload::executeTask()
     connect(rep, &QNetworkReply::uploadProgress, this, &Task::setProgress);
     connect(rep, &QNetworkReply::finished, this, &PasteUpload::downloadFinished);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(rep, &QNetworkReply::errorOccurred, this, &PasteUpload::downloadError);
-#else
-    connect(rep, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &PasteUpload::downloadError);
-#endif
 
     m_reply = std::shared_ptr<QNetworkReply>(rep);
 

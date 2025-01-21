@@ -136,11 +136,7 @@ NewInstanceDialog::NewInstanceDialog(const QString& initialGroup,
     if (APPLICATION->settings()->get("NewInstanceGeometry").isValid()) {
         restoreGeometry(QByteArray::fromBase64(APPLICATION->settings()->get("NewInstanceGeometry").toByteArray()));
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         auto screen = parent->screen();
-#else
-        auto screen = QGuiApplication::primaryScreen();
-#endif
         auto geometry = screen->availableSize();
         resize(width(), qMin(geometry.height() - 50, 710));
     }

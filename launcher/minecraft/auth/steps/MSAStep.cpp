@@ -168,13 +168,8 @@ void MSAStep::perform()
         oauth2.setRefreshToken(m_data->msaToken.refresh_token);
         oauth2.refreshAccessToken();
     } else {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)  // QMultiMap param changed in 6.0
         oauth2.setModifyParametersFunction(
             [](QAbstractOAuth::Stage stage, QMultiMap<QString, QVariant>* map) { map->insert("prompt", "select_account"); });
-#else
-        oauth2.setModifyParametersFunction(
-            [](QAbstractOAuth::Stage stage, QMap<QString, QVariant>* map) { map->insert("prompt", "select_account"); });
-#endif
 
         *m_data = AccountData();
         m_data->msaClientID = m_clientId;

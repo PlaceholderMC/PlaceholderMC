@@ -262,15 +262,7 @@ Task::Ptr GetModDependenciesTask::prepareDependencyTask(const ModPlatform::Depen
 void GetModDependenciesTask::removePack(const QVariant& addonId)
 {
     auto pred = [addonId](const std::shared_ptr<PackDependency>& v) { return v->pack->addonId == addonId; };
-#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
     m_pack_dependencies.removeIf(pred);
-#else
-    for (auto it = m_pack_dependencies.begin(); it != m_pack_dependencies.end();)
-        if (pred(*it))
-            it = m_pack_dependencies.erase(it);
-        else
-            ++it;
-#endif
 }
 
 auto GetModDependenciesTask::getExtraInfo() -> QHash<QString, PackDependencyExtraInfo>

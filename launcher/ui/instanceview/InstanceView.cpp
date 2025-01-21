@@ -400,12 +400,8 @@ void InstanceView::mouseReleaseEvent(QMouseEvent* event)
         if (event->button() == Qt::LeftButton) {
             emit clicked(index);
         }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QStyleOptionViewItem option;
         initViewItemOption(&option);
-#else
-        QStyleOptionViewItem option = viewOptions();
-#endif
         if (m_pressedAlreadySelected) {
             option.state |= QStyle::State_Selected;
         }
@@ -431,12 +427,8 @@ void InstanceView::mouseDoubleClickEvent(QMouseEvent* event)
     QPersistentModelIndex persistent = index;
     emit doubleClicked(persistent);
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QStyleOptionViewItem option;
     initViewItemOption(&option);
-#else
-    QStyleOptionViewItem option = viewOptions();
-#endif
     if ((model()->flags(index) & Qt::ItemIsEnabled) && !style()->styleHint(QStyle::SH_ItemView_ActivateItemOnSingleClick, &option, this)) {
         emit activated(index);
     }
@@ -472,12 +464,8 @@ void InstanceView::paintEvent([[maybe_unused]] QPaintEvent* event)
         painter.setOpacity(1.0);
     }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QStyleOptionViewItem option;
     initViewItemOption(&option);
-#else
-    QStyleOptionViewItem option = viewOptions();
-#endif
     option.widget = this;
 
     if (model()->rowCount() == 0) {
@@ -732,12 +720,8 @@ QRect InstanceView::geometryRect(const QModelIndex& index) const
     int x = pos.first;
     // int y = pos.second;
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QStyleOptionViewItem option;
     initViewItemOption(&option);
-#else
-    QStyleOptionViewItem option = viewOptions();
-#endif
 
     QRect out;
     out.setTop(cat->verticalPosition() + cat->headerHeight() + 5 + cat->rowTopOf(index));
@@ -784,12 +768,8 @@ QPixmap InstanceView::renderToPixmap(const QModelIndexList& indices, QRect* r) c
     QPixmap pixmap(r->size());
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     QStyleOptionViewItem option;
     initViewItemOption(&option);
-#else
-    QStyleOptionViewItem option = viewOptions();
-#endif
     option.state |= QStyle::State_Selected;
     for (int j = 0; j < paintPairs.count(); ++j) {
         option.rect = paintPairs.at(j).first.translated(-r->topLeft());
