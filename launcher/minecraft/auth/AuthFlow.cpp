@@ -1,5 +1,4 @@
 #include <QDebug>
-#include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 

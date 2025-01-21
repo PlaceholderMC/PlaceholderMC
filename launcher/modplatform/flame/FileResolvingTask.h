@@ -17,8 +17,6 @@
  */
 #pragma once
 
-#include <QNetworkAccessManager>
-
 #include "PackManifest.h"
 #include "tasks/Task.h"
 
@@ -26,7 +24,7 @@ namespace Flame {
 class FileResolvingTask : public Task {
     Q_OBJECT
    public:
-    explicit FileResolvingTask(const shared_qobject_ptr<QNetworkAccessManager>& network, Flame::Manifest& toProcess);
+    explicit FileResolvingTask(Flame::Manifest& toProcess);
     virtual ~FileResolvingTask() = default;
 
     bool canAbort() const override { return true; }
@@ -44,7 +42,6 @@ class FileResolvingTask : public Task {
     void getFlameProjects();
 
    private: /* data */
-    shared_qobject_ptr<QNetworkAccessManager> m_network;
     Flame::Manifest m_manifest;
     std::shared_ptr<QByteArray> m_result;
     Task::Ptr m_task;

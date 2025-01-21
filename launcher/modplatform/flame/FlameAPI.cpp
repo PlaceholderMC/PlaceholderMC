@@ -102,57 +102,6 @@ QString FlameAPI::getModDescription(int modId)
     return description;
 }
 
-QList<ModPlatform::IndexedVersion> FlameAPI::getLatestVersions(VersionSearchArgs&& args)
-{
-    auto versions_url_optional = getVersionsURL(args);
-    if (!versions_url_optional.has_value())
-        return {};
-
-    auto versions_url = versions_url_optional.value();
-
-    QEventLoop loop;
-
-    auto netJob = makeShared<NetJob>(QString("Flame::GetLatestVersion(%1)").arg(args.pack.name), APPLICATION->network());
-    auto response = std::make_shared<QByteArray>();
-    QList<ModPlatform::IndexedVersion> ver;
-
-    netJob->addNetAction(Net::ApiDownload::makeByteArray(versions_url, response));
-
-    QObject::connect(netJob.get(), &NetJob::succeeded, [response, args, &ver] {
-        QJsonParseError parse_error{};
-        QJsonDocument doc = QJsonDocument::fromJson(*response, &parse_error);
-        if (parse_error.error != QJsonParseError::NoError) {
-            qWarning() << "Error while parsing JSON response from latest mod version at " << parse_error.offset
-                       << " reason: " << parse_error.errorString();
-            qWarning() << *response;
-            return;
-        }
-
-        try {
-            auto obj = Json::requireObject(doc);
-            auto arr = Json::requireArray(obj, "data");
-
-            for (auto file : arr) {
-                auto file_obj = Json::requireObject(file);
-                ver.append(FlameMod::loadIndexedPackVersion(file_obj));
-            }
-
-        } catch (Json::JsonException& e) {
-            qCritical() << "Failed to parse response from a version request.";
-            qCritical() << e.what();
-            qDebug() << doc;
-        }
-    });
-
-    QObject::connect(netJob.get(), &NetJob::finished, &loop, &QEventLoop::quit);
-
-    netJob->start();
-
-    loop.exec();
-
-    return ver;
-}
-
 Task::Ptr FlameAPI::getProjects(QStringList addonIds, std::shared_ptr<QByteArray> response) const
 {
     auto netJob = makeShared<NetJob>(QString("Flame::GetProjects"), APPLICATION->network());
@@ -266,10 +215,20 @@ QList<ModPlatform::Category> FlameAPI::loadModCategories(std::shared_ptr<QByteAr
     return categories;
 };
 
-std::optional<ModPlatform::IndexedVersion> FlameAPI::getLatestVersion(QList<ModPlatform::IndexedVersion> versions,
+std::optional<ModPlatform::IndexedVersion> FlameAPI::getLatestVersion(QVector<ModPlatform::IndexedVersion> versions,
                                                                       QList<ModPlatform::ModLoaderType> instanceLoaders,
-                                                                      ModPlatform::ModLoaderTypes modLoaders)
+                                                                      ModPlatform::ModLoaderTypes modLoaders,
+                                                                      bool checkLoaders)
 {
+    if (!checkLoaders) {
+        std::optional<ModPlatform::IndexedVersion> ver;
+        for (auto file_tmp : versions) {
+            if (!ver.has_value() || file_tmp.date > ver->date) {
+                ver = file_tmp;
+            }
+        }
+        return ver;
+    }
     QHash<ModPlatform::ModLoaderType, ModPlatform::IndexedVersion> bestMatch;
     auto checkVersion = [&bestMatch](const ModPlatform::IndexedVersion& version, const ModPlatform::ModLoaderType& loader) {
         if (bestMatch.contains(loader)) {
