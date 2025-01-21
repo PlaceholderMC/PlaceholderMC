@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>511</width>
+    <width>625</width>
     <height>726</height>
    </rect>
   </property>
@@ -58,8 +58,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>473</width>
-            <height>770</height>
+            <width>591</width>
+            <height>837</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -450,6 +450,13 @@
           <string>Cat</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
+          <item row="1" column="0">
+           <widget class="QLabel" name="catFitLabel">
+            <property name="text">
+             <string>Fit</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QLabel" name="catOpacityLabel">
             <property name="toolTip">
@@ -460,7 +467,7 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
+          <item row="0" column="3">
            <widget class="QSpinBox" name="catOpacitySpinBox">
             <property name="specialValueText">
              <string/>
@@ -476,8 +483,8 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
-           <spacer name="horizontalSpacer">
+          <item row="0" column="2">
+           <spacer name="catOpacityHorizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
@@ -488,6 +495,41 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="1" column="2">
+           <spacer name="catFitHorizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="3">
+           <widget class="QComboBox" name="catFitComboBox">
+            <property name="currentIndex">
+             <number>0</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Fit</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Fill</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Stretch</string>
+             </property>
+            </item>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -707,6 +749,7 @@
   <tabstop>sortLastLaunchedBtn</tabstop>
   <tabstop>sortByNameBtn</tabstop>
   <tabstop>catOpacitySpinBox</tabstop>
+  <tabstop>catFitComboBox</tabstop>
   <tabstop>preferMenuBarCheckBox</tabstop>
   <tabstop>showConsoleCheck</tabstop>
   <tabstop>autoCloseConsoleCheck</tabstop>

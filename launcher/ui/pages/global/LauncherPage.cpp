@@ -250,6 +250,8 @@ void LauncherPage::applySettings()
 
     // Cat
     s->set("CatOpacity", ui->catOpacitySpinBox->value());
+    auto catFit = ui->catFitComboBox->currentIndex();
+    s->set("CatFit", catFit == 0 ? "fit" : catFit == 1 ? "fill" : "strech");
 
     // Mods
     s->set("ModMetadataDisabled", ui->metadataDisableBtn->isChecked());
@@ -315,6 +317,8 @@ void LauncherPage::loadSettings()
 
     // Cat
     ui->catOpacitySpinBox->setValue(s->get("CatOpacity").toInt());
+    auto catFit = s->get("CatFit").toString();
+    ui->catFitComboBox->setCurrentIndex(catFit == "fit" ? 0 : catFit == "fill" ? 1 : 2);
 
     // Mods
     ui->metadataDisableBtn->setChecked(s->get("ModMetadataDisabled").toBool());
