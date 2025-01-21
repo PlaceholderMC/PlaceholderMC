@@ -700,7 +700,7 @@ jobs:
 
         # For PRs
       - name: Setup Nix Magic Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+        uses: DeterminateSystems/magic-nix-cache-action@v9
 
         # For in-tree builds
       - name: Setup Cachix
