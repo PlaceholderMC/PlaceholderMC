@@ -19,7 +19,6 @@
 #pragma once
 
 #include <QDir>
-#include <QEventLoop>
 #include <QList>
 #include <QVariant>
 #include <functional>

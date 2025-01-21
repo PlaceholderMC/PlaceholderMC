@@ -20,7 +20,6 @@
 #include <algorithm>
 
 #include "Json.h"
-#include "QObjectPtr.h"
 #include "modplatform/ModIndex.h"
 #include "modplatform/flame/FlameAPI.h"
 #include "modplatform/flame/FlameModIndex.h"
@@ -33,9 +32,7 @@
 static const FlameAPI flameAPI;
 static ModrinthAPI modrinthAPI;
 
-Flame::FileResolvingTask::FileResolvingTask(const shared_qobject_ptr<QNetworkAccessManager>& network, Flame::Manifest& toProcess)
-    : m_network(network), m_manifest(toProcess)
-{}
+Flame::FileResolvingTask::FileResolvingTask(Flame::Manifest& toProcess) : m_manifest(toProcess) {}
 
 bool Flame::FileResolvingTask::abort()
 {

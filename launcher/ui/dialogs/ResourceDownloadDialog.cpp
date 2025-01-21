@@ -18,7 +18,6 @@
  */
 
 #include "ResourceDownloadDialog.h"
-#include <QEventLoop>
 #include <QList>
 
 #include <QPushButton>
