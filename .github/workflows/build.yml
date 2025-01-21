@@ -337,20 +337,8 @@ jobs:
       ##
 
       - name: Test
-        if: runner.os != 'Windows'
         run: |
-          ctest -E "^example64|example$" --test-dir build --output-on-failure
-
-      - name: Test (Windows MinGW-w64)
-        if: runner.os == 'Windows' && matrix.msystem != ''
-        shell: msys2 {0}
-        run: |
-          ctest -E "^example64|example$" --test-dir build --output-on-failure
-
-      - name: Test (Windows MSVC)
-        if: runner.os == 'Windows' && matrix.msystem == '' && matrix.architecture != 'arm64'
-        run: |
-          ctest -E "^example64|example$" --test-dir build --output-on-failure -C ${{ inputs.build_type }}
+          ctest --test-dir ${{ env.BUILD_DIR }} --output-on-failure -C ${{ inputs.build_type }}
 
       ##
       # PACKAGE BUILDS
