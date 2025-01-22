@@ -16,12 +16,10 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "java/download/ArchiveDownloadTask.h"
-#include <quazip.h>
 #include <memory>
 #include "MMCZip.h"
 
 #include "Application.h"
-#include "Untar.h"
 #include "net/ChecksumValidator.h"
 #include "net/NetJob.h"
 #include "tasks/Task.h"
@@ -65,69 +63,44 @@ void ArchiveDownloadTask::executeTask()
 
 void ArchiveDownloadTask::extractJava(QString input)
 {
-    setStatus(tr("Extracting Java"));
-    if (input.endsWith("tar")) {
-        setStatus(tr("Extracting Java (Progress is not reported for tar archives)"));
-        QFile in(input);
-        if (!in.open(QFile::ReadOnly)) {
-            emitFailed(tr("Unable to open supplied tar file."));
-            return;
-        }
-        if (!Tar::extract(&in, QDir(m_final_path).absolutePath())) {
-            emitFailed(tr("Unable to extract supplied tar file."));
-            return;
-        }
-        emitSucceeded();
-        return;
-    } else if (input.endsWith("tar.gz") || input.endsWith("taz") || input.endsWith("tgz")) {
-        setStatus(tr("Extracting Java (Progress is not reported for tar archives)"));
-        if (!GZTar::extract(input, QDir(m_final_path).absolutePath())) {
-            emitFailed(tr("Unable to extract supplied tar file."));
-            return;
-        }
-        emitSucceeded();
-        return;
-    } else if (input.endsWith("zip")) {
-        auto zip = std::make_shared<QuaZip>(input);
-        if (!zip->open(QuaZip::mdUnzip)) {
-            emitFailed(tr("Unable to open supplied zip file."));
-            return;
-        }
-        auto files = zip->getFileNameList();
-        if (files.isEmpty()) {
-            emitFailed(tr("No files were found in the supplied zip file."));
-            return;
-        }
-        m_task = makeShared<MMCZip::ExtractZipTask>(zip, m_final_path, files[0]);
+    setStatus(tr("Extracting java"));
 
-        auto progressStep = std::make_shared<TaskStepProgress>();
-        connect(m_task.get(), &Task::finished, this, [this, progressStep] {
-            progressStep->state = TaskStepState::Succeeded;
-            stepProgress(*progressStep);
-        });
-
-        connect(m_task.get(), &Task::succeeded, this, &ArchiveDownloadTask::emitSucceeded);
-        connect(m_task.get(), &Task::aborted, this, &ArchiveDownloadTask::emitAborted);
-        connect(m_task.get(), &Task::failed, this, [this, progressStep](QString reason) {
-            progressStep->state = TaskStepState::Failed;
-            stepProgress(*progressStep);
-            emitFailed(reason);
-        });
-        connect(m_task.get(), &Task::stepProgress, this, &ArchiveDownloadTask::propagateStepProgress);
-
-        connect(m_task.get(), &Task::progress, this, [this, progressStep](qint64 current, qint64 total) {
-            progressStep->update(current, total);
-            stepProgress(*progressStep);
-        });
-        connect(m_task.get(), &Task::status, this, [this, progressStep](QString status) {
-            progressStep->status = status;
-            stepProgress(*progressStep);
-        });
-        m_task->start();
+    auto archive = MMCZip::ExtractKArchive::newArchive(input);
+    if (!archive->open(QIODevice::ReadOnly)) {
+        emitFailed(tr("Unable to open supplied archive file."));
         return;
     }
+    auto files = archive->directory()->entries();
+    if (files.isEmpty()) {
+        emitFailed(tr("No files were found in the supplied zip file,"));
+        return;
+    }
+    m_task = makeShared<MMCZip::ExtractKArchive>(archive, m_final_path, files[0]);
 
-    emitFailed(tr("Could not determine archive type!"));
+    auto progressStep = std::make_shared<TaskStepProgress>();
+    connect(m_task.get(), &Task::finished, this, [this, progressStep] {
+        progressStep->state = TaskStepState::Succeeded;
+        stepProgress(*progressStep);
+    });
+
+    connect(m_task.get(), &Task::succeeded, this, &ArchiveDownloadTask::emitSucceeded);
+    connect(m_task.get(), &Task::aborted, this, &ArchiveDownloadTask::emitAborted);
+    connect(m_task.get(), &Task::failed, this, [this, progressStep](QString reason) {
+        progressStep->state = TaskStepState::Failed;
+        stepProgress(*progressStep);
+        emitFailed(reason);
+    });
+    connect(m_task.get(), &Task::stepProgress, this, &ArchiveDownloadTask::propagateStepProgress);
+
+    connect(m_task.get(), &Task::progress, this, [this, progressStep](qint64 current, qint64 total) {
+        progressStep->update(current, total);
+        stepProgress(*progressStep);
+    });
+    connect(m_task.get(), &Task::status, this, [this, progressStep](QString status) {
+        progressStep->status = status;
+        stepProgress(*progressStep);
+    });
+    m_task->start();
 }
 
 bool ArchiveDownloadTask::abort()
