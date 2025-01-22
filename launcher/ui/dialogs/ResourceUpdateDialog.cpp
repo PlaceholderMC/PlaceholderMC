@@ -378,7 +378,7 @@ auto ResourceUpdateDialog::ensureMetadata() -> bool
 void ResourceUpdateDialog::onMetadataEnsured(Resource* resource)
 {
     // When the mod is a folder, for instance
-    if (!resource->metadata())
+    if (!resource->metadata() || resource->lockUpdate())
         return;
 
     switch (resource->metadata()->provider) {
