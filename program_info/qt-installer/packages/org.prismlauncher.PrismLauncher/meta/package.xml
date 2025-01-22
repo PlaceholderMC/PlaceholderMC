@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+	<DisplayName>Prism Launcher</DisplayName>
+	<Description>Install this example.</Description>
+	<Version>8.4</Version>
+	<Licenses>
+		<License name="GNU General Public License v3" file="license.txt" />
+	</Licenses>
+	<ReleaseDate>2024-08-05</ReleaseDate>
+	<!--<Script>installscript.qs</Script>-->
+	<!--
+	<UserInterfaces>
+		<UserInterface>page.ui</UserInterface>
+	</UserInterfaces>
+	-->
+	<Default>true</Default>
+	<ForcedInstallation>true</ForcedInstallation>
+	<Operations>
+		<Operation name="Extract">
+			<Argument>prismlauncher.zip</Argument>
+			<Argument>@TargetDir@</Argument>
+		</Operation>
+	</Operations>
+</Package>
