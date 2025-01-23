@@ -73,7 +73,7 @@ class ResourceAPI {
         std::optional<QString> search;
         std::optional<SortingMethod> sorting;
         std::optional<ModPlatform::ModLoaderTypes> loaders;
-        std::optional<std::list<Version> > versions;
+        std::optional<std::list<Version>> versions;
         std::optional<QString> side;
         std::optional<QStringList> categoryIds;
         bool openSource;
@@ -169,11 +169,23 @@ class ResourceAPI {
    protected:
     [[nodiscard]] inline QString debugName() const { return "External resource API"; }
 
-    [[nodiscard]] inline auto getGameVersionsString(std::list<Version> mcVersions) const -> QString
+    [[nodiscard]] inline QString mapMCVersionToModrinth(Version v) const
+    {
+        static const QString preString = " Pre-Release ";
+        auto verStr = v.toString();
+
+        if (verStr.contains(preString)) {
+            verStr.replace(preString, "-pre");
+        }
+        verStr.replace(" ", "-");
+        return verStr;
+    }
+
+    [[nodiscard]] inline QString getGameVersionsString(std::list<Version> mcVersions) const
     {
         QString s;
         for (auto& ver : mcVersions) {
-            s += QString("\"%1\",").arg(ver.toString());
+            s += QString("\"%1\",").arg(mapMCVersionToModrinth(ver));
         }
         s.remove(s.length() - 1, 1);  // remove last comma
         return s;

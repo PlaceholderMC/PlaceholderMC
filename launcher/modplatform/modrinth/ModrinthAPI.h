@@ -83,6 +83,21 @@ class ModrinthAPI : public NetworkResourceAPI {
         return {};
     }
 
+    [[nodiscard]] static inline QString mapMCVersionFromModrinth(QString v)
+    {
+        static const QString preString = " Pre-Release ";
+        bool pre = false;
+        if (v.contains("-pre")) {
+            pre = true;
+            v.replace("-pre", preString);
+        }
+        v.replace("-", " ");
+        if (pre) {
+            v.replace(" Pre Release ", preString);
+        }
+        return v;
+    }
+
    private:
     [[nodiscard]] static QString resourceTypeParameter(ModPlatform::ResourceType type)
     {
@@ -174,7 +189,7 @@ class ModrinthAPI : public NetworkResourceAPI {
     {
         QString s;
         for (auto& ver : mcVersions) {
-            s += QString("\"versions:%1\",").arg(ver.toString());
+            s += QString("\"versions:%1\",").arg(mapMCVersionToModrinth(ver));
         }
         s.remove(s.length() - 1, 1);  // remove last comma
         return s.isEmpty() ? QString() : s;
@@ -191,7 +206,7 @@ class ModrinthAPI : public NetworkResourceAPI {
                                                      : QString("%1/project/%2/version?game_versions=[\"%3\"]&loaders=[\"%4\"]")
                                                            .arg(BuildConfig.MODRINTH_PROD_URL)
                                                            .arg(args.dependency.addonId.toString())
-                                                           .arg(args.mcVersion.toString())
+                                                           .arg(mapMCVersionToModrinth(args.mcVersion))
                                                            .arg(getModLoaderStrings(args.loader).join("\",\""));
     };
 };
