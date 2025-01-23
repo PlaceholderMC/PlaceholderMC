@@ -60,40 +60,40 @@
 #include "SeparatorPrefixTree.h"
 
 ExportInstanceDialog::ExportInstanceDialog(InstancePtr instance, QWidget* parent)
-    : QDialog(parent), ui(new Ui::ExportInstanceDialog), m_instance(instance)
+    : QDialog(parent), m_ui(new Ui::ExportInstanceDialog), m_instance(instance)
 {
-    ui->setupUi(this);
+    m_ui->setupUi(this);
     auto model = new QFileSystemModel(this);
-    model->setIconProvider(&icons);
+    model->setIconProvider(&m_icons);
     auto root = instance->instanceRoot();
-    proxyModel = new FileIgnoreProxy(root, this);
-    proxyModel->setSourceModel(model);
+    m_proxyModel = new FileIgnoreProxy(root, this);
+    m_proxyModel->setSourceModel(model);
     auto prefix = QDir(instance->instanceRoot()).relativeFilePath(instance->gameRoot());
-    proxyModel->ignoreFilesWithPath().insert({ FS::PathCombine(prefix, "logs"), FS::PathCombine(prefix, "crash-reports") });
-    proxyModel->ignoreFilesWithName().append({ ".DS_Store", "thumbs.db", "Thumbs.db" });
-    proxyModel->ignoreFilesWithPath().insert(
-        { FS::PathCombine(prefix, ".cache"), FS::PathCombine(prefix, ".fabric"), FS::PathCombine(prefix, ".quilt") });
-    loadPackIgnore();
+    for (auto path : { "logs", "crash-reports", ".cache", ".fabric", ".quilt" }) {
+        m_proxyModel->ignoreFilesWithPath().insert(FS::PathCombine(prefix, path));
+    }
+    m_proxyModel->ignoreFilesWithName().append({ ".DS_Store", "thumbs.db", "Thumbs.db" });
+    m_proxyModel->loadBlockedPathsFromFile(ignoreFileName());
 
-    ui->treeView->setModel(proxyModel);
-    ui->treeView->setRootIndex(proxyModel->mapFromSource(model->index(root)));
-    ui->treeView->sortByColumn(0, Qt::AscendingOrder);
+    m_ui->treeView->setModel(m_proxyModel);
+    m_ui->treeView->setRootIndex(m_proxyModel->mapFromSource(model->index(root)));
+    m_ui->treeView->sortByColumn(0, Qt::AscendingOrder);
 
-    connect(proxyModel, SIGNAL(rowsInserted(QModelIndex, int, int)), SLOT(rowsInserted(QModelIndex, int, int)));
+    connect(m_proxyModel, SIGNAL(rowsInserted(QModelIndex, int, int)), SLOT(rowsInserted(QModelIndex, int, int)));
 
     model->setFilter(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::AllDirs | QDir::Hidden);
     model->setRootPath(root);
-    auto headerView = ui->treeView->header();
+    auto headerView = m_ui->treeView->header();
     headerView->setSectionResizeMode(QHeaderView::ResizeToContents);
     headerView->setSectionResizeMode(0, QHeaderView::Stretch);
 
-    ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
+    m_ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+    m_ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
 }
 
 ExportInstanceDialog::~ExportInstanceDialog()
 {
-    delete ui;
+    delete m_ui;
 }
 
 /// Save icon to instance's folder is needed
@@ -144,7 +144,7 @@ void ExportInstanceDialog::doExport()
 
     auto files = QFileInfoList();
     if (!MMCZip::collectFileListRecursively(m_instance->instanceRoot(), nullptr, &files,
-                                            std::bind(&FileIgnoreProxy::filterFile, proxyModel, std::placeholders::_1))) {
+                                            std::bind(&FileIgnoreProxy::filterFile, m_proxyModel, std::placeholders::_1))) {
         QMessageBox::warning(this, tr("Error"), tr("Unable to export instance"));
         QDialog::done(QDialog::Rejected);
         return;
@@ -164,7 +164,7 @@ void ExportInstanceDialog::doExport()
 
 void ExportInstanceDialog::done(int result)
 {
-    savePackIgnore();
+    m_proxyModel->saveBlockedPathsToFile(ignoreFileName());
     if (result == QDialog::Accepted) {
         doExport();
         return;
@@ -176,13 +176,13 @@ void ExportInstanceDialog::rowsInserted(QModelIndex parent, int top, int bottom)
 {
     // WARNING: possible off-by-one?
     for (int i = top; i < bottom; i++) {
-        auto node = proxyModel->index(i, 0, parent);
-        if (proxyModel->shouldExpand(node)) {
+        auto node = m_proxyModel->index(i, 0, parent);
+        if (m_proxyModel->shouldExpand(node)) {
             auto expNode = node.parent();
             if (!expNode.isValid()) {
                 continue;
             }
-            ui->treeView->expand(node);
+            m_ui->treeView->expand(node);
         }
     }
 }
@@ -190,31 +190,4 @@ void ExportInstanceDialog::rowsInserted(QModelIndex parent, int top, int bottom)
 QString ExportInstanceDialog::ignoreFileName()
 {
     return FS::PathCombine(m_instance->instanceRoot(), ".packignore");
-}
-
-void ExportInstanceDialog::loadPackIgnore()
-{
-    auto filename = ignoreFileName();
-    QFile ignoreFile(filename);
-    if (!ignoreFile.open(QIODevice::ReadOnly)) {
-        return;
-    }
-    auto ignoreData = ignoreFile.readAll();
-    auto string = QString::fromUtf8(ignoreData);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    proxyModel->setBlockedPaths(string.split('\n', Qt::SkipEmptyParts));
-#else
-    proxyModel->setBlockedPaths(string.split('\n', QString::SkipEmptyParts));
-#endif
-}
-
-void ExportInstanceDialog::savePackIgnore()
-{
-    auto ignoreData = proxyModel->blockedPaths().toStringList().join('\n').toUtf8();
-    auto filename = ignoreFileName();
-    try {
-        FS::write(filename, ignoreData);
-    } catch (const Exception& e) {
-        qWarning() << e.cause();
-    }
 }
