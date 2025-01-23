@@ -72,7 +72,14 @@ jobs:
           - os: windows-2022
             name: "Windows-MinGW-w64"
             msystem: clang64
+            msystem_arch: x86_64
             vcvars_arch: "amd64_x86"
+
+          - os: windows-2022
+            name: "Windows-MinGW-arm64"
+            msystem: clangarm64
+            msystem_arch: clang-aarch64
+            vcvars_arch: "amd64_arm64"
 
           - os: windows-2022
             name: "Windows-MSVC"
@@ -176,9 +183,9 @@ jobs:
         uses: actions/cache@v4.2.0
         with:
           path: '${{ github.workspace }}\.ccache'
-          key: ${{ matrix.os }}-mingw-w64-ccache-${{ github.run_id }}
+          key: ${{ matrix.os }}-mingw-w64-${{ matrix.msystem_arch }}-ccache-${{ github.run_id }}
           restore-keys: |
-            ${{ matrix.os }}-mingw-w64-ccache
+            ${{ matrix.os }}-mingw-w64-${{ matrix.msystem_arch }}-ccache
 
       - name: Setup ccache (Windows MinGW-w64)
         if: runner.os == 'Windows' && matrix.msystem != '' && inputs.build_type == 'Debug'
