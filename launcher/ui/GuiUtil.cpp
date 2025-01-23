@@ -38,10 +38,15 @@
 #include "GuiUtil.h"
 
 #include <QApplication>
+#include <QBuffer>
 #include <QClipboard>
 #include <QFileDialog>
 #include <QStandardPaths>
 
+#include <memory>
+
+#include "FileSystem.h"
+#include "net/NetJob.h"
 #include "net/PasteUpload.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/ProgressDialog.h"
@@ -74,80 +79,99 @@ QString truncateLogForMclogs(const QString& logContent)
     return logContent;
 }
 
-std::optional<QString> GuiUtil::uploadPaste(const QString& name, const QString& text, QWidget* parentWidget)
+std::optional<QString> GuiUtil::uploadPaste(const QString& name, const QFileInfo& filePath, QWidget* parentWidget)
+{
+    return uploadPaste(name, FS::read(filePath.absoluteFilePath()), parentWidget);
+};
+
+std::optional<QString> GuiUtil::uploadPaste(const QString& name, const QString& log, QWidget* parentWidget)
 {
     ProgressDialog dialog(parentWidget);
-    auto pasteTypeSetting = static_cast<PasteUpload::PasteType>(APPLICATION->settings()->get("PastebinType").toInt());
-    auto pasteCustomAPIBaseSetting = APPLICATION->settings()->get("PastebinCustomAPIBase").toString();
+    auto pasteType = static_cast<PasteUpload::PasteType>(APPLICATION->settings()->get("PastebinType").toInt());
+    auto baseURL = APPLICATION->settings()->get("PastebinCustomAPIBase").toString();
     bool shouldTruncate = false;
 
-    {
-        QUrl baseUrl;
-        if (pasteCustomAPIBaseSetting.isEmpty())
-            baseUrl = PasteUpload::PasteTypes[pasteTypeSetting].defaultBase;
-        else
-            baseUrl = pasteCustomAPIBaseSetting;
+    if (baseURL.isEmpty())
+        baseURL = PasteUpload::PasteTypes[pasteType].defaultBase;
 
-        if (baseUrl.isValid()) {
-            auto response = CustomMessageBox::selectable(parentWidget, QObject::tr("Confirm Upload"),
-                                                         QObject::tr("You are about to upload \"%1\" to %2.\n"
-                                                                     "You should double-check for personal information.\n\n"
-                                                                     "Are you sure?")
-                                                             .arg(name, baseUrl.host()),
-                                                         QMessageBox::Warning, QMessageBox::Yes | QMessageBox::No, QMessageBox::No)
-                                ->exec();
+    if (auto url = QUrl(baseURL); url.isValid()) {
+        auto response = CustomMessageBox::selectable(parentWidget, QObject::tr("Confirm Upload"),
+                                                     QObject::tr("You are about to upload \"%1\" to %2.\n"
+                                                                 "You should double-check for personal information.\n\n"
+                                                                 "Are you sure?")
+                                                         .arg(name, url.host()),
+                                                     QMessageBox::Warning, QMessageBox::Yes | QMessageBox::No, QMessageBox::No)
+                            ->exec();
 
-            if (response != QMessageBox::Yes)
+        if (response != QMessageBox::Yes)
+            return {};
+
+        if (baseURL == "https://api.mclo.gs" && log.count("\n") > MaxMclogsLines) {
+            auto truncateResponse = CustomMessageBox::selectable(
+                                        parentWidget, QObject::tr("Confirm Truncation"),
+                                        QObject::tr("The log has %1 lines, exceeding mclo.gs' limit of %2.\n"
+                                                    "The launcher can keep the first %3 and last %4 lines, trimming the middle.\n\n"
+                                                    "If you choose 'No', mclo.gs will only keep the first %2 lines, cutting off "
+                                                    "potentially useful info like crashes at the end.\n\n"
+                                                    "Proceed with truncation?")
+                                            .arg(log.count("\n"))
+                                            .arg(MaxMclogsLines)
+                                            .arg(InitialMclogsLines)
+                                            .arg(FinalMclogsLines),
+                                        QMessageBox::Warning, QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::No)
+                                        ->exec();
+
+            if (truncateResponse == QMessageBox::Cancel) {
                 return {};
-
-            if (baseUrl.toString() == "https://api.mclo.gs" && text.count("\n") > MaxMclogsLines) {
-                auto truncateResponse = CustomMessageBox::selectable(
-                                            parentWidget, QObject::tr("Confirm Truncation"),
-                                            QObject::tr("The log has %1 lines, exceeding mclo.gs' limit of %2.\n"
-                                                        "The launcher can keep the first %3 and last %4 lines, trimming the middle.\n\n"
-                                                        "If you choose 'No', mclo.gs will only keep the first %2 lines, cutting off "
-                                                        "potentially useful info like crashes at the end.\n\n"
-                                                        "Proceed with truncation?")
-                                                .arg(text.count("\n"))
-                                                .arg(MaxMclogsLines)
-                                                .arg(InitialMclogsLines)
-                                                .arg(FinalMclogsLines),
-                                            QMessageBox::Warning, QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::No)
-                                            ->exec();
-
-                if (truncateResponse == QMessageBox::Cancel) {
-                    return {};
-                }
-                shouldTruncate = truncateResponse == QMessageBox::Yes;
             }
+            shouldTruncate = truncateResponse == QMessageBox::Yes;
         }
     }
 
-    QString textToUpload = text;
-    if (shouldTruncate) {
-        textToUpload = truncateLogForMclogs(text);
-    }
+    auto result = std::make_shared<PasteUpload::Result>();
+    auto job = NetJob::Ptr(new NetJob("Log Upload", APPLICATION->network()));
 
-    std::unique_ptr<PasteUpload> paste(new PasteUpload(parentWidget, textToUpload, pasteCustomAPIBaseSetting, pasteTypeSetting));
+    job->addNetAction(PasteUpload::make(shouldTruncate ? truncateLogForMclogs(log) : log, pasteType, baseURL, result));
+    QObject::connect(job.get(), &Task::failed, [parentWidget](QString reason) {
+        CustomMessageBox::selectable(parentWidget, QObject::tr("Failed to upload logs!"), reason, QMessageBox::Critical)->show();
+    });
+    QObject::connect(job.get(), &Task::aborted, [parentWidget] {
+        CustomMessageBox::selectable(parentWidget, QObject::tr("Logs upload aborted"),
+                                     QObject::tr("The task has been aborted by the user."), QMessageBox::Information)
+            ->show();
+    });
 
-    dialog.execWithTask(paste.get());
-    if (!paste->wasSuccessful()) {
-        CustomMessageBox::selectable(parentWidget, QObject::tr("Upload failed"), paste->failReason(), QMessageBox::Critical)->exec();
-        return QString();
-    } else {
-        const QString link = paste->pasteLink();
-        setClipboardText(link);
+    if (dialog.execWithTask(job.get()) == QDialog::Accepted) {
+        if (!result->error.isEmpty() || !result->extra_message.isEmpty()) {
+            QString message = QObject::tr("Error: %1").arg(result->error);
+            if (!result->extra_message.isEmpty()) {
+                message += QObject::tr("\nError message: %1").arg(result->extra_message);
+            }
+            CustomMessageBox::selectable(parentWidget, QObject::tr("Failed to upload logs!"), message, QMessageBox::Critical)->show();
+            return {};
+        }
+        if (result->link.isEmpty()) {
+            CustomMessageBox::selectable(parentWidget, QObject::tr("Failed to upload logs!"), "The upload link is empty",
+                                         QMessageBox::Critical)
+                ->show();
+            return {};
+        }
+        setClipboardText(result->link);
         CustomMessageBox::selectable(
             parentWidget, QObject::tr("Upload finished"),
-            QObject::tr("The <a href=\"%1\">link to the uploaded log</a> has been placed in your clipboard.").arg(link),
+            QObject::tr("The <a href=\"%1\">link to the uploaded log</a> has been placed in your clipboard.").arg(result->link),
             QMessageBox::Information)
             ->exec();
-        return link;
+        return result->link;
     }
+    return {};
 }
 
-void GuiUtil::setClipboardText(const QString& text)
+void GuiUtil::setClipboardText(QString text)
 {
+    for (auto rule : PasteUpload::AnonimizeRules) {
+        text.replace(rule.reg, rule.with);
+    }
     QApplication::clipboard()->setText(text);
 }
 

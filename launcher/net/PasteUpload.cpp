@@ -36,74 +36,64 @@
  */
 
 #include "PasteUpload.h"
-#include "Application.h"
-#include "BuildConfig.h"
 
-#include <QDebug>
-#include <QFile>
 #include <QHttpPart>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QUrlQuery>
 
-#include "net/Logging.h"
+const QVector<PasteUpload::RegReplace> PasteUpload::AnonimizeRules = {
+    RegReplace(QRegularExpression("C:\\\\Users\\\\([^\\\\]+)\\\\", QRegularExpression::CaseInsensitiveOption),
+               "C:\\Users\\********\\"),  // windows
+    RegReplace(QRegularExpression("C:\\/Users\\/([^\\/]+)\\/", QRegularExpression::CaseInsensitiveOption),
+               "C:/Users/********/"),  // windows with forward slashes
+    RegReplace(QRegularExpression("(?<!\\\\w)\\/home\\/[^\\/]+\\/", QRegularExpression::CaseInsensitiveOption),
+               "/home/********/"),  // linux
+    RegReplace(QRegularExpression("(?<!\\\\w)\\/Users\\/[^\\/]+\\/", QRegularExpression::CaseInsensitiveOption),
+               "/Users/********/"),  // macos
+    RegReplace(QRegularExpression("\\(Session ID is [^\\)]+\\)", QRegularExpression::CaseInsensitiveOption),
+               "(Session ID is <SESSION_TOKEN>)"),  // SESSION_TOKEN
+    RegReplace(QRegularExpression("new refresh token: \"[^\"]+\"", QRegularExpression::CaseInsensitiveOption),
+               "new refresh token: \"<TOKEN>\""),  // refresh token
+    RegReplace(QRegularExpression("\"device_code\" :  \"[^\"]+\"", QRegularExpression::CaseInsensitiveOption),
+               "\"device_code\" :  \"<DEVICE_CODE>\""),  // device code
+};
 
-std::array<PasteUpload::PasteTypeInfo, 4> PasteUpload::PasteTypes = { { { "0x0.st", "https://0x0.st", "" },
-                                                                        { "hastebin", "https://hst.sh", "/documents" },
-                                                                        { "paste.gg", "https://paste.gg", "/api/v1/pastes" },
-                                                                        { "mclo.gs", "https://api.mclo.gs", "/1/log" } } };
+const std::array<PasteUpload::PasteTypeInfo, 4> PasteUpload::PasteTypes = { { { "0x0.st", "https://0x0.st", "" },
+                                                                              { "hastebin", "https://hst.sh", "/documents" },
+                                                                              { "paste.gg", "https://paste.gg", "/api/v1/pastes" },
+                                                                              { "mclo.gs", "https://api.mclo.gs", "/1/log" } } };
 
-PasteUpload::PasteUpload(QWidget* window, QString text, QString baseUrl, PasteType pasteType)
-    : m_window(window), m_baseUrl(baseUrl), m_pasteType(pasteType), m_text(text.toUtf8())
+QNetworkReply* PasteUpload::getReply(QNetworkRequest& request)
 {
-    if (m_baseUrl == "")
-        m_baseUrl = PasteTypes.at(pasteType).defaultBase;
+    for (auto rule : AnonimizeRules) {
+        m_log.replace(rule.reg, rule.with);
+    }
 
-    // HACK: Paste's docs say the standard API path is at /api/<version> but the official instance paste.gg doesn't follow that??
-    if (pasteType == PasteGG && m_baseUrl == PasteTypes.at(pasteType).defaultBase)
-        m_uploadUrl = "https://api.paste.gg/v1/pastes";
-    else
-        m_uploadUrl = m_baseUrl + PasteTypes.at(pasteType).endpointPath;
-}
-
-PasteUpload::~PasteUpload() {}
-
-void PasteUpload::executeTask()
-{
-    QNetworkRequest request{ QUrl(m_uploadUrl) };
-    QNetworkReply* rep{};
-
-    request.setHeader(QNetworkRequest::UserAgentHeader, APPLICATION->getUserAgentUncached().toUtf8());
-
-    switch (m_pasteType) {
-        case NullPointer: {
+    switch (m_paste_type) {
+        case PasteUpload::NullPointer: {
             QHttpMultiPart* multiPart = new QHttpMultiPart{ QHttpMultiPart::FormDataType };
 
             QHttpPart filePart;
-            filePart.setBody(m_text);
+            filePart.setBody(m_log.toUtf8());
             filePart.setHeader(QNetworkRequest::ContentTypeHeader, "text/plain");
             filePart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"file\"; filename=\"log.txt\"");
             multiPart->append(filePart);
 
-            rep = APPLICATION->network()->post(request, multiPart);
-            multiPart->setParent(rep);
-
-            break;
+            return m_network->post(request, multiPart);
         }
-        case Hastebin: {
-            request.setHeader(QNetworkRequest::UserAgentHeader, APPLICATION->getUserAgentUncached().toUtf8());
-            rep = APPLICATION->network()->post(request, m_text);
-            break;
+        case PasteUpload::Hastebin: {
+            return m_network->post(request, m_log.toUtf8());
         }
-        case Mclogs: {
+        case PasteUpload::Mclogs: {
             QUrlQuery postData;
-            postData.addQueryItem("content", m_text);
+            postData.addQueryItem("content", m_log);
             request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-            rep = APPLICATION->network()->post(request, postData.toString().toUtf8());
-            break;
+            return m_network->post(request, postData.toString().toUtf8());
         }
-        case PasteGG: {
+        case PasteUpload::PasteGG: {
             QJsonObject obj;
             QJsonDocument doc;
             request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
@@ -114,7 +104,7 @@ void PasteUpload::executeTask()
             QJsonObject logFileInfo;
             QJsonObject logFileContentInfo;
             logFileContentInfo.insert("format", "text");
-            logFileContentInfo.insert("value", QString::fromUtf8(m_text));
+            logFileContentInfo.insert("value", m_log);
             logFileInfo.insert("name", "log.txt");
             logFileInfo.insert("content", logFileContentInfo);
             files.append(logFileInfo);
@@ -122,112 +112,115 @@ void PasteUpload::executeTask()
             obj.insert("files", files);
 
             doc.setObject(obj);
-            rep = APPLICATION->network()->post(request, doc.toJson());
-            break;
+            return m_network->post(request, doc.toJson());
         }
     }
 
-    connect(rep, &QNetworkReply::uploadProgress, this, &Task::setProgress);
-    connect(rep, &QNetworkReply::finished, this, &PasteUpload::downloadFinished);
+    return nullptr;
+};
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-    connect(rep, &QNetworkReply::errorOccurred, this, &PasteUpload::downloadError);
-#else
-    connect(rep, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::error), this, &PasteUpload::downloadError);
-#endif
+auto PasteUpload::Sink::init(QNetworkRequest& request) -> Task::State
+{
+    m_output.clear();
+    return Task::State::Running;
+};
 
-    m_reply = std::shared_ptr<QNetworkReply>(rep);
-
-    setStatus(tr("Uploading to %1").arg(m_uploadUrl));
+auto PasteUpload::Sink::write(QByteArray& data) -> Task::State
+{
+    m_output.append(data);
+    return Task::State::Running;
 }
 
-void PasteUpload::downloadError(QNetworkReply::NetworkError error)
+auto PasteUpload::Sink::abort() -> Task::State
 {
-    // error happened during download.
-    qCCritical(taskUploadLogC) << getUid().toString() << "Network error: " << error;
-    emitFailed(m_reply->errorString());
+    m_output.clear();
+    return Task::State::Failed;
 }
 
-void PasteUpload::downloadFinished()
+auto PasteUpload::Sink::finalize(QNetworkReply&) -> Task::State
 {
-    QByteArray data = m_reply->readAll();
-    int statusCode = m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-
-    if (m_reply->error() != QNetworkReply::NetworkError::NoError) {
-        emitFailed(tr("Network error: %1").arg(m_reply->errorString()));
-        m_reply.reset();
-        return;
-    } else if (statusCode != 200 && statusCode != 201) {
-        QString reasonPhrase = m_reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString();
-        emitFailed(tr("Error: %1 returned unexpected status code %2 %3").arg(m_uploadUrl).arg(statusCode).arg(reasonPhrase));
-        qCCritical(taskUploadLogC) << getUid().toString() << m_uploadUrl << " returned unexpected status code " << statusCode
-                                   << " with body: " << data;
-        m_reply.reset();
-        return;
-    }
-
-    switch (m_pasteType) {
-        case NullPointer:
-            m_pasteLink = QString::fromUtf8(data).trimmed();
+    switch (m_paste_type) {
+        case PasteUpload::NullPointer:
+            m_result->link = QString::fromUtf8(m_output).trimmed();
             break;
-        case Hastebin: {
-            QJsonDocument jsonDoc{ QJsonDocument::fromJson(data) };
-            QJsonObject jsonObj{ jsonDoc.object() };
-            if (jsonObj.contains("key") && jsonObj["key"].isString()) {
-                QString key = jsonDoc.object()["key"].toString();
-                m_pasteLink = m_baseUrl + "/" + key;
+        case PasteUpload::Hastebin: {
+            QJsonParseError jsonError;
+            auto doc = QJsonDocument::fromJson(m_output, &jsonError);
+            if (jsonError.error != QJsonParseError::NoError) {
+                qDebug() << "hastebin server did not reply with JSON" << jsonError.errorString();
+                return Task::State::Failed;
+            }
+            auto obj = doc.object();
+            if (obj.contains("key") && obj["key"].isString()) {
+                QString key = doc.object()["key"].toString();
+                m_result->link = m_base_url + "/" + key;
             } else {
-                emitFailed(tr("Error: %1 returned a malformed response body").arg(m_uploadUrl));
-                qCCritical(taskUploadLogC) << getUid().toString() << getUid().toString() << m_uploadUrl
-                                           << " returned malformed response body: " << data;
-                return;
+                qDebug() << "Log upload failed:" << doc.toJson();
+                return Task::State::Failed;
             }
             break;
         }
-        case Mclogs: {
-            QJsonDocument jsonDoc{ QJsonDocument::fromJson(data) };
-            QJsonObject jsonObj{ jsonDoc.object() };
-            if (jsonObj.contains("success") && jsonObj["success"].isBool()) {
-                bool success = jsonObj["success"].toBool();
+        case PasteUpload::Mclogs: {
+            QJsonParseError jsonError;
+            auto doc = QJsonDocument::fromJson(m_output, &jsonError);
+            if (jsonError.error != QJsonParseError::NoError) {
+                qDebug() << "mclogs server did not reply with JSON" << jsonError.errorString();
+                return Task::State::Failed;
+            }
+            auto obj = doc.object();
+            if (obj.contains("success") && obj["success"].isBool()) {
+                bool success = obj["success"].toBool();
                 if (success) {
-                    m_pasteLink = jsonObj["url"].toString();
+                    m_result->link = obj["url"].toString();
                 } else {
-                    QString error = jsonObj["error"].toString();
-                    emitFailed(tr("Error: %1 returned an error: %2").arg(m_uploadUrl, error));
-                    qCCritical(taskUploadLogC) << getUid().toString() << m_uploadUrl << " returned error: " << error;
-                    qCCritical(taskUploadLogC) << getUid().toString() << "Response body: " << data;
-                    return;
+                    m_result->error = obj["error"].toString();
                 }
             } else {
-                emitFailed(tr("Error: %1 returned a malformed response body").arg(m_uploadUrl));
-                qCCritical(taskUploadLogC) << getUid().toString() << m_uploadUrl << " returned malformed response body: " << data;
-                return;
+                qDebug() << "Log upload failed:" << doc.toJson();
+                return Task::State::Failed;
             }
             break;
         }
-        case PasteGG:
-            QJsonDocument jsonDoc{ QJsonDocument::fromJson(data) };
-            QJsonObject jsonObj{ jsonDoc.object() };
-            if (jsonObj.contains("status") && jsonObj["status"].isString()) {
-                QString status = jsonObj["status"].toString();
+        case PasteUpload::PasteGG:
+            QJsonParseError jsonError;
+            auto doc = QJsonDocument::fromJson(m_output, &jsonError);
+            if (jsonError.error != QJsonParseError::NoError) {
+                qDebug() << "pastegg server did not reply with JSON" << jsonError.errorString();
+                return Task::State::Failed;
+            }
+            auto obj = doc.object();
+            if (obj.contains("status") && obj["status"].isString()) {
+                QString status = obj["status"].toString();
                 if (status == "success") {
-                    m_pasteLink = m_baseUrl + "/p/anonymous/" + jsonObj["result"].toObject()["id"].toString();
+                    m_result->link = m_base_url + "/p/anonymous/" + obj["result"].toObject()["id"].toString();
                 } else {
-                    QString error = jsonObj["error"].toString();
-                    QString message =
-                        (jsonObj.contains("message") && jsonObj["message"].isString()) ? jsonObj["message"].toString() : "none";
-                    emitFailed(tr("Error: %1 returned an error code: %2\nError message: %3").arg(m_uploadUrl, error, message));
-                    qCCritical(taskUploadLogC) << getUid().toString() << m_uploadUrl << " returned error: " << error;
-                    qCCritical(taskUploadLogC) << getUid().toString() << "Error message: " << message;
-                    qCCritical(taskUploadLogC) << getUid().toString() << "Response body: " << data;
-                    return;
+                    m_result->error = obj["error"].toString();
+                    m_result->extra_message = (obj.contains("message") && obj["message"].isString()) ? obj["message"].toString() : "none";
                 }
             } else {
-                emitFailed(tr("Error: %1 returned a malformed response body").arg(m_uploadUrl));
-                qCCritical(taskUploadLogC) << getUid().toString() << m_uploadUrl << " returned malformed response body: " << data;
-                return;
+                qDebug() << "Log upload failed:" << doc.toJson();
+                return Task::State::Failed;
             }
             break;
     }
-    emitSucceeded();
+    return Task::State::Succeeded;
+}
+
+Net::NetRequest::Ptr PasteUpload::make(const QString& log,
+                                       const PasteUpload::PasteType pasteType,
+                                       const QString customBaseURL,
+                                       ResultPtr result)
+{
+    auto base = PasteUpload::PasteTypes.at(pasteType);
+    QString baseUrl = customBaseURL.isEmpty() ? base.defaultBase : customBaseURL;
+    auto up = makeShared<PasteUpload>(log, pasteType);
+
+    // HACK: Paste's docs say the standard API path is at /api/<version> but the official instance paste.gg doesn't follow that??
+    if (pasteType == PasteUpload::PasteGG && baseUrl == base.defaultBase)
+        up->m_url = "https://api.paste.gg/v1/pastes";
+    else
+        up->m_url = baseUrl + base.endpointPath;
+
+    up->m_sink.reset(new Sink(pasteType, baseUrl, result));
+    return up;
 }

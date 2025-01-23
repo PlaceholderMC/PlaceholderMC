@@ -90,6 +90,7 @@
 #include <updater/ExternalUpdater.h>
 #include "InstanceWindow.h"
 
+#include "ui/GuiUtil.h"
 #include "ui/dialogs/AboutDialog.h"
 #include "ui/dialogs/CopyInstanceDialog.h"
 #include "ui/dialogs/CustomMessageBox.h"
@@ -235,6 +236,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         }
 
         ui->actionViewJavaFolder->setEnabled(BuildConfig.JAVA_DOWNLOADER_ENABLED);
+    }
+
+    {  // logs upload
+
+        auto menu = new QMenu(this);
+        for (auto file : QDir("logs").entryInfoList(QDir::Files)) {
+            auto action = menu->addAction(file.fileName());
+            connect(action, &QAction::triggered, this, [this, file] { GuiUtil::uploadPaste(file.fileName(), file, this); });
+        }
+        ui->actionUploadLog->setMenu(menu);
     }
 
     // add the toolbar toggles to the view menu

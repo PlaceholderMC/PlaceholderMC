@@ -35,15 +35,17 @@
 
 #pragma once
 
-#include <QBuffer>
-#include <QNetworkReply>
-#include <QString>
-#include <array>
-#include <memory>
+#include "net/NetRequest.h"
 #include "tasks/Task.h"
 
-class PasteUpload : public Task {
-    Q_OBJECT
+#include <QNetworkReply>
+#include <QRegularExpression>
+#include <QString>
+
+#include <array>
+#include <memory>
+
+class PasteUpload : public Net::NetRequest {
    public:
     enum PasteType : int {
         // 0x0.st
@@ -58,32 +60,53 @@ class PasteUpload : public Task {
         First = NullPointer,
         Last = Mclogs
     };
-
     struct PasteTypeInfo {
         const QString name;
         const QString defaultBase;
         const QString endpointPath;
     };
+    struct RegReplace {
+        RegReplace(QRegularExpression r, QString w) : reg(r), with(w) { reg.optimize(); }
+        QRegularExpression reg;
+        QString with;
+    };
 
-    static std::array<PasteTypeInfo, 4> PasteTypes;
+    static const std::array<PasteTypeInfo, 4> PasteTypes;
+    static const QVector<RegReplace> AnonimizeRules;
+    struct Result {
+        QString link;
+        QString error;
+        QString extra_message;
+    };
 
-    PasteUpload(QWidget* window, QString text, QString url, PasteType pasteType);
-    virtual ~PasteUpload();
+    using ResultPtr = std::shared_ptr<Result>;
 
-    QString pasteLink() { return m_pasteLink; }
+    class Sink : public Net::Sink {
+       public:
+        Sink(const PasteType pasteType, const QString base_url, ResultPtr result)
+            : m_paste_type(pasteType), m_base_url(base_url), m_result(result) {};
+        virtual ~Sink() = default;
 
-   protected:
-    virtual void executeTask();
+       public:
+        auto init(QNetworkRequest& request) -> Task::State override;
+        auto write(QByteArray& data) -> Task::State override;
+        auto abort() -> Task::State override;
+        auto finalize(QNetworkReply& reply) -> Task::State override;
+        auto hasLocalData() -> bool override { return false; }
+
+       private:
+        const PasteType m_paste_type;
+        const QString m_base_url;
+        ResultPtr m_result;
+        QByteArray m_output;
+    };
+    PasteUpload(const QString& log, const PasteType pasteType) : m_log(log), m_paste_type(pasteType) {}
+    virtual ~PasteUpload() = default;
+
+    static NetRequest::Ptr make(const QString& log, const PasteType pasteType, const QString baseURL, ResultPtr result);
 
    private:
-    QWidget* m_window;
-    QString m_pasteLink;
-    QString m_baseUrl;
-    QString m_uploadUrl;
-    PasteType m_pasteType;
-    QByteArray m_text;
-    std::shared_ptr<QNetworkReply> m_reply;
-   public slots:
-    void downloadError(QNetworkReply::NetworkError);
-    void downloadFinished();
+    virtual QNetworkReply* getReply(QNetworkRequest&) override;
+    QString m_log;
+    const PasteType m_paste_type;
 };
