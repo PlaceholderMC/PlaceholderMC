@@ -86,6 +86,7 @@ auto ImgurAlbumCreation::Sink::write(QByteArray& data) -> Task::State
 auto ImgurAlbumCreation::Sink::abort() -> Task::State
 {
     m_output.clear();
+    m_fail_reason = "Aborted";
     return Task::State::Failed;
 }
 
@@ -95,11 +96,13 @@ auto ImgurAlbumCreation::Sink::finalize(QNetworkReply&) -> Task::State
     QJsonDocument doc = QJsonDocument::fromJson(m_output, &jsonError);
     if (jsonError.error != QJsonParseError::NoError) {
         qDebug() << jsonError.errorString();
+        m_fail_reason = "Invalid json reply";
         return Task::State::Failed;
     }
     auto object = doc.object();
     if (!object.value("success").toBool()) {
         qDebug() << doc.toJson();
+        m_fail_reason = "Failed to create album";
         return Task::State::Failed;
     }
     m_result->deleteHash = object.value("data").toObject().value("deletehash").toString();
