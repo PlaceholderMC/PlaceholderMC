@@ -303,6 +303,8 @@ void InstanceSettingsPage::applySettings()
         m_settings->reset("OnlineFixes");
     }
 
+    m_settings->set("UseLatestMinecraftVersion", ui->latestMCVersionCheckBox->isChecked());
+
     // FIXME: This should probably be called by a signal instead
     m_instance->updateRuntimeContext();
 }
@@ -436,6 +438,8 @@ void InstanceSettingsPage::loadSettings()
 
     ui->legacySettingsGroupBox->setChecked(m_settings->get("OverrideLegacySettings").toBool());
     ui->onlineFixes->setChecked(m_settings->get("OnlineFixes").toBool());
+
+    ui->latestMCVersionCheckBox->setChecked(m_settings->get("UseLatestMinecraftVersion").toBool());
 }
 
 void InstanceSettingsPage::on_javaDownloadBtn_clicked()
