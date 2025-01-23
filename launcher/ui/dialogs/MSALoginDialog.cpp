@@ -36,6 +36,7 @@
 #include "MSALoginDialog.h"
 #include "Application.h"
 
+#include "qr.h"
 #include "ui_MSALoginDialog.h"
 
 #include "DesktopServices.h"
@@ -60,7 +61,6 @@ MSALoginDialog::MSALoginDialog(QWidget* parent) : QDialog(parent), ui(new Ui::MS
     ui->code->setFont(font);
 
     connect(ui->copyCode, &QPushButton::clicked, this, [this] { QApplication::clipboard()->setText(ui->code->text()); });
-    ui->qr->setPixmap(QIcon((":/documents/login-qr.svg")).pixmap(QSize(150, 150)));
     connect(ui->loginButton, &QPushButton::clicked, this, [this] {
         if (m_url.isValid()) {
             if (!DesktopServices::openUrl(m_url)) {
@@ -139,19 +139,28 @@ void MSALoginDialog::authorizeWithBrowser(const QUrl& url)
     m_url = url;
 }
 
-void MSALoginDialog::authorizeWithBrowserWithExtra(QString url, QString code, int expiresIn)
+void MSALoginDialog::authorizeWithBrowserWithExtra(QString url, QString code, [[maybe_unused]] int expiresIn)
 {
     ui->stackedWidget->setCurrentIndex(1);
 
+    if (url == "https://www.microsoft.com/link" && !code.isEmpty()) {
+        url += QString("?otc=%1").arg(code);
+    }
+
     const auto linkString = QString("<a href=\"%1\">%2</a>").arg(url, url);
     ui->code->setText(code);
-    auto isDefaultUrl = url == "https://www.microsoft.com/link";
-    ui->qr->setVisible(isDefaultUrl);
-    if (isDefaultUrl) {
-        ui->qrMessage->setText(tr("Open %1 or scan the QR and enter the above code.").arg(linkString));
-    } else {
-        ui->qrMessage->setText(tr("Open %1 and enter the above code.").arg(linkString));
-    }
+
+    auto size = QSize(150, 150);
+    QPixmap pixmap(size);
+    pixmap.fill(Qt::white);
+
+    QPainter painter(&pixmap);
+    paintQR(painter, size, url, Qt::black);
+
+    // Set the generated pixmap to the label
+    ui->qr->setPixmap(pixmap);
+
+    ui->qrMessage->setText(tr("Open %1 or scan the QR and enter the above code if needed.").arg(linkString));
 }
 
 void MSALoginDialog::onDeviceFlowStatus(QString status)
