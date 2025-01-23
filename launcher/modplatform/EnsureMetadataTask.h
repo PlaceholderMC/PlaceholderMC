@@ -30,11 +30,11 @@ class EnsureMetadataTask : public Task {
 
    private:
     // FIXME: Move to their own namespace
-    auto modrinthVersionsTask() -> Task::Ptr;
-    auto modrinthProjectsTask() -> Task::Ptr;
+    Task::Ptr modrinthVersionsTask();
+    Task::Ptr modrinthProjectsTask();
 
-    auto flameVersionsTask() -> Task::Ptr;
-    auto flameProjectsTask() -> Task::Ptr;
+    Task::Ptr flameVersionsTask();
+    Task::Ptr flameProjectsTask();
 
     // Helpers
     enum class RemoveFromList { Yes, No };
@@ -42,12 +42,12 @@ class EnsureMetadataTask : public Task {
     void emitFail(Resource*, QString key = {}, RemoveFromList = RemoveFromList::Yes);
 
     // Hashes and stuff
-    auto createNewHash(Resource*) -> Hashing::Hasher::Ptr;
-    auto getExistingHash(Resource*) -> QString;
+    Hashing::Hasher::Ptr createNewHash(Resource*);
+    QString getExistingHash(Resource*);
 
    private slots:
-    void modrinthCallback(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource*);
-    void flameCallback(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource*);
+    void updateMetadata(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource*);
+    void updateMetadataCallback(ModPlatform::IndexedPack& pack, Resource* resource);
 
    signals:
     void metadataReady(Resource*);
@@ -55,10 +55,11 @@ class EnsureMetadataTask : public Task {
 
    private:
     QHash<QString, Resource*> m_resources;
-    QDir m_index_dir;
+    QDir m_indexDir;
     ModPlatform::ResourceProvider m_provider;
 
-    QHash<QString, ModPlatform::IndexedVersion> m_temp_versions;
+    QHash<QString, ModPlatform::IndexedVersion> m_tempVersions;
     Task::Ptr m_hashingTask;
-    Task::Ptr m_current_task;
+    Task::Ptr m_currentTask;
+    QHash<QString, Task::Ptr> m_updateMetadataTasks;
 };

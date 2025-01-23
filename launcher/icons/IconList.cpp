@@ -37,7 +37,6 @@
 #include "IconList.h"
 #include <FileSystem.h>
 #include <QDebug>
-#include <QEventLoop>
 #include <QFileSystemWatcher>
 #include <QMap>
 #include <QMimeData>

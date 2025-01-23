@@ -6,6 +6,7 @@
 #include "Application.h"
 #include "Json.h"
 
+#include "QObjectPtr.h"
 #include "minecraft/mod/Mod.h"
 #include "minecraft/mod/tasks/LocalResourceUpdateTask.h"
 
@@ -19,7 +20,7 @@ static ModrinthAPI modrinth_api;
 static FlameAPI flame_api;
 
 EnsureMetadataTask::EnsureMetadataTask(Resource* resource, QDir dir, ModPlatform::ResourceProvider prov)
-    : Task(), m_index_dir(dir), m_provider(prov), m_hashingTask(nullptr), m_current_task(nullptr)
+    : Task(), m_indexDir(dir), m_provider(prov), m_hashingTask(nullptr), m_currentTask(nullptr)
 {
     auto hashTask = createNewHash(resource);
     if (!hashTask)
@@ -30,7 +31,7 @@ EnsureMetadataTask::EnsureMetadataTask(Resource* resource, QDir dir, ModPlatform
 }
 
 EnsureMetadataTask::EnsureMetadataTask(QList<Resource*>& resources, QDir dir, ModPlatform::ResourceProvider prov)
-    : Task(), m_index_dir(dir), m_provider(prov), m_current_task(nullptr)
+    : Task(), m_indexDir(dir), m_provider(prov), m_currentTask(nullptr)
 {
     auto hashTask = makeShared<ConcurrentTask>("MakeHashesTask", APPLICATION->settings()->get("NumberOfConcurrentTasks").toInt());
     m_hashingTask = hashTask;
@@ -45,7 +46,7 @@ EnsureMetadataTask::EnsureMetadataTask(QList<Resource*>& resources, QDir dir, Mo
 }
 
 EnsureMetadataTask::EnsureMetadataTask(QHash<QString, Resource*>& resources, QDir dir, ModPlatform::ResourceProvider prov)
-    : Task(), m_resources(resources), m_index_dir(dir), m_provider(prov), m_current_task(nullptr)
+    : Task(), m_resources(resources), m_indexDir(dir), m_provider(prov), m_currentTask(nullptr)
 {}
 
 Hashing::Hasher::Ptr EnsureMetadataTask::createNewHash(Resource* resource)
@@ -81,8 +82,8 @@ bool EnsureMetadataTask::abort()
     // Prevent sending signals to a dead object
     disconnect(this, 0, 0, 0);
 
-    if (m_current_task)
-        return m_current_task->abort();
+    if (m_currentTask)
+        return m_currentTask->abort();
     return true;
 }
 
@@ -149,19 +150,13 @@ void EnsureMetadataTask::executeTask()
         connect(project_task.get(), &Task::finished, this, [this, invalidade_leftover, project_task] {
             invalidade_leftover();
             project_task->deleteLater();
-            if (m_current_task)
-                m_current_task.reset();
+            if (m_currentTask)
+                m_currentTask.reset();
         });
         connect(project_task.get(), &Task::failed, this, &EnsureMetadataTask::emitFailed);
 
-        m_current_task = project_task;
+        m_currentTask = project_task;
         project_task->start();
-    });
-
-    connect(version_task.get(), &Task::finished, [this, version_task] {
-        version_task->deleteLater();
-        if (m_current_task)
-            m_current_task.reset();
     });
 
     if (m_resources.size() > 1)
@@ -170,7 +165,7 @@ void EnsureMetadataTask::executeTask()
         setStatus(tr("Requesting metadata information from %1 for '%2'...")
                       .arg(ModPlatform::ProviderCapabilities::readableName(m_provider), m_resources.begin().value()->name()));
 
-    m_current_task = version_task;
+    m_currentTask = version_task;
     version_task->start();
 }
 
@@ -249,7 +244,7 @@ Task::Ptr EnsureMetadataTask::modrinthVersionsTask()
                     setStatus(tr("Parsing API response from Modrinth for '%1'...").arg(resource->name()));
                     qDebug() << "Getting version for" << resource->name() << "from Modrinth";
 
-                    m_temp_versions.insert(hash, Modrinth::loadIndexedPackVersion(entry));
+                    m_tempVersions.insert(hash, Modrinth::loadIndexedPackVersion(entry));
                 } catch (Json::JsonException& e) {
                     qDebug() << e.cause();
                     qDebug() << entries;
@@ -269,7 +264,7 @@ Task::Ptr EnsureMetadataTask::modrinthVersionsTask()
 Task::Ptr EnsureMetadataTask::modrinthProjectsTask()
 {
     QHash<QString, QString> addonIds;
-    for (auto const& data : m_temp_versions)
+    for (auto const& data : m_tempVersions)
         addonIds.insert(data.addonId.toString(), data.hash);
 
     auto response = std::make_shared<QByteArray>();
@@ -334,16 +329,9 @@ Task::Ptr EnsureMetadataTask::modrinthProjectsTask()
 
             auto* resource = resource_iter.value();
 
-            try {
-                setStatus(tr("Parsing API response from Modrinth for '%1'...").arg(resource->name()));
+            setStatus(tr("Parsing API response from Modrinth for '%1'...").arg(resource->name()));
 
-                modrinthCallback(pack, m_temp_versions.find(hash).value(), resource);
-            } catch (Json::JsonException& e) {
-                qDebug() << e.cause();
-                qDebug() << entries;
-
-                emitFail(resource);
-            }
+            updateMetadata(pack, m_tempVersions.find(hash).value(), resource);
         }
     });
 
@@ -404,7 +392,7 @@ Task::Ptr EnsureMetadataTask::flameVersionsTask()
 
                 setStatus(tr("Parsing API response from CurseForge for '%1'...").arg((*resource)->name()));
 
-                m_temp_versions.insert(fingerprint, FlameMod::loadIndexedPackVersion(file_obj));
+                m_tempVersions.insert(fingerprint, FlameMod::loadIndexedPackVersion(file_obj));
             }
 
         } catch (Json::JsonException& e) {
@@ -420,8 +408,8 @@ Task::Ptr EnsureMetadataTask::flameProjectsTask()
 {
     QHash<QString, QString> addonIds;
     for (auto const& hash : m_resources.keys()) {
-        if (m_temp_versions.contains(hash)) {
-            auto data = m_temp_versions.find(hash).value();
+        if (m_tempVersions.contains(hash)) {
+            auto data = m_tempVersions.find(hash).value();
 
             auto id_str = data.addonId.toString();
             if (!id_str.isEmpty())
@@ -468,19 +456,19 @@ Task::Ptr EnsureMetadataTask::flameProjectsTask()
                 auto hash = addonIds.find(id).value();
                 auto resource = m_resources.find(hash).value();
 
+                ModPlatform::IndexedPack pack;
                 try {
                     setStatus(tr("Parsing API response from CurseForge for '%1'...").arg(resource->name()));
 
-                    ModPlatform::IndexedPack pack;
                     FlameMod::loadIndexedPack(pack, entry_obj);
 
-                    flameCallback(pack, m_temp_versions.find(hash).value(), resource);
                 } catch (Json::JsonException& e) {
                     qDebug() << e.cause();
                     qDebug() << entries;
 
                     emitFail(resource);
                 }
+                updateMetadata(pack, m_tempVersions.find(hash).value(), resource);
             }
         } catch (Json::JsonException& e) {
             qDebug() << e.cause();
@@ -491,28 +479,31 @@ Task::Ptr EnsureMetadataTask::flameProjectsTask()
     return proj_task;
 }
 
-void EnsureMetadataTask::modrinthCallback(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource* resource)
+void EnsureMetadataTask::updateMetadata(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource* resource)
 {
-    // Prevent file name mismatch
-    ver.fileName = resource->fileinfo().fileName();
-    if (ver.fileName.endsWith(".disabled"))
-        ver.fileName.chop(9);
+    try {
+        // Prevent file name mismatch
+        ver.fileName = resource->fileinfo().fileName();
+        if (ver.fileName.endsWith(".disabled"))
+            ver.fileName.chop(9);
 
-    QDir tmp_index_dir(m_index_dir);
+        auto task = makeShared<LocalResourceUpdateTask>(m_indexDir, pack, ver);
 
-    {
-        LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver);
-        QEventLoop loop;
+        connect(task.get(), &Task::finished, this, [this, &pack, resource] { updateMetadataCallback(pack, resource); });
 
-        QObject::connect(&update_metadata, &Task::finished, &loop, &QEventLoop::quit);
+        m_updateMetadataTasks[ModPlatform::ProviderCapabilities::name(pack.provider) + pack.addonId.toString()] = task;
+        task->start();
+    } catch (Json::JsonException& e) {
+        qDebug() << e.cause();
 
-        update_metadata.start();
-
-        if (!update_metadata.isFinished())
-            loop.exec();
+        emitFail(resource);
     }
+}
 
-    auto metadata = Metadata::get(tmp_index_dir, pack.slug);
+void EnsureMetadataTask::updateMetadataCallback(ModPlatform::IndexedPack& pack, Resource* resource)
+{
+    QDir tmpIndexDir(m_indexDir);
+    auto metadata = Metadata::get(tmpIndexDir, pack.slug);
     if (!metadata.isValid()) {
         qCritical() << "Failed to generate metadata at last step!";
         emitFail(resource);
@@ -522,43 +513,4 @@ void EnsureMetadataTask::modrinthCallback(ModPlatform::IndexedPack& pack, ModPla
     resource->setMetadata(metadata);
 
     emitReady(resource);
-}
-
-void EnsureMetadataTask::flameCallback(ModPlatform::IndexedPack& pack, ModPlatform::IndexedVersion& ver, Resource* resource)
-{
-    try {
-        // Prevent file name mismatch
-        ver.fileName = resource->fileinfo().fileName();
-        if (ver.fileName.endsWith(".disabled"))
-            ver.fileName.chop(9);
-
-        QDir tmp_index_dir(m_index_dir);
-
-        {
-            LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver);
-            QEventLoop loop;
-
-            QObject::connect(&update_metadata, &Task::finished, &loop, &QEventLoop::quit);
-
-            update_metadata.start();
-
-            if (!update_metadata.isFinished())
-                loop.exec();
-        }
-
-        auto metadata = Metadata::get(tmp_index_dir, pack.slug);
-        if (!metadata.isValid()) {
-            qCritical() << "Failed to generate metadata at last step!";
-            emitFail(resource);
-            return;
-        }
-
-        resource->setMetadata(metadata);
-
-        emitReady(resource);
-    } catch (Json::JsonException& e) {
-        qDebug() << e.cause();
-
-        emitFail(resource);
-    }
 }
