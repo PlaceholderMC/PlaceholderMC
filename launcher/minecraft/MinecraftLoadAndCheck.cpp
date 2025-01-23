@@ -1,4 +1,5 @@
 #include "MinecraftLoadAndCheck.h"
+#include "Application.h"
 #include "MinecraftInstance.h"
 #include "PackProfile.h"
 
@@ -8,6 +9,14 @@ void MinecraftLoadAndCheck::executeTask()
 {
     // add offline metadata load task
     auto components = m_inst->getPackProfile();
+    if (m_inst->settings()->get("UseLatestMinecraftVersion").toBool()) {
+        if (APPLICATION->settings()->get("AutomaticJavaSwitch").toBool() && m_inst->settings()->get("AutomaticJava").toBool() &&
+            m_inst->settings()->get("OverrideJavaLocation").toBool()) {
+            m_inst->settings()->set("OverrideJavaLocation", false);
+            m_inst->settings()->set("JavaPath", "");
+        }
+        components->updateLatesMinecraft();
+    }
     if (auto result = components->reload(m_netmode); !result) {
         emitFailed(result.error);
         return;

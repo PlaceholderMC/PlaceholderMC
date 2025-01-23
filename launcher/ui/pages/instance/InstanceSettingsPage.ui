@@ -36,7 +36,7 @@
    <item>
     <widget class="QTabWidget" name="settingsTabs">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="minecraftPage">
       <attribute name="title">
@@ -742,6 +742,13 @@
            </layout>
           </item>
          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="latestMCVersionCheckBox">
+         <property name="text">
+          <string>Allways use the latest minecraft version</string>
+         </property>
         </widget>
        </item>
        <item>

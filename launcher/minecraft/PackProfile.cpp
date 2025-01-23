@@ -1069,3 +1069,20 @@ QList<ModPlatform::ModLoaderType> PackProfile::getModLoadersList()
     }
     return result;
 }
+
+void PackProfile::updateLatesMinecraft()
+{
+    const QString uid = "net.minecraft";
+    auto patch = getComponent(uid);
+    patch->waitLoadMeta();  // make sure we have latest versions
+    auto list = patch->getVersionList();
+    if (!list) {
+        return;
+    }
+
+    auto latest = list->getLatest();
+
+    qDebug() << "Change" << uid << "to" << latest.get();
+    setComponentVersion(uid, latest->descriptor(), true);
+    resolve(Net::Mode::Online);
+}
