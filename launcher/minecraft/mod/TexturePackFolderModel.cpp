@@ -39,18 +39,22 @@
 
 #include "TexturePackFolderModel.h"
 
+#include "minecraft/mod/Resource.h"
 #include "minecraft/mod/tasks/LocalTexturePackParseTask.h"
 #include "minecraft/mod/tasks/ResourceFolderLoadTask.h"
 
 TexturePackFolderModel::TexturePackFolderModel(const QDir& dir, BaseInstance* instance, bool is_indexed, bool create_dir, QObject* parent)
     : ResourceFolderModel(QDir(dir), instance, is_indexed, create_dir, parent)
 {
-    m_column_names = QStringList({ "Enable", "Image", "Name", "Last Modified", "Provider", "Size" });
-    m_column_names_translated = QStringList({ tr("Enable"), tr("Image"), tr("Name"), tr("Last Modified"), tr("Provider"), tr("Size") });
-    m_column_sort_keys = { SortType::ENABLED, SortType::NAME, SortType::NAME, SortType::DATE, SortType::PROVIDER, SortType::SIZE };
-    m_column_resize_modes = { QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Stretch, QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive };
-    m_columnsHideable = { false, true, false, true, true, true };
-    m_columnsHiddenByDefault = { false, false, false, false, false, true };
+    m_column_names = QStringList({ "Enable", "Image", "Name", "Last Modified", "Provider", "Size", "Category", "Update" });
+    m_column_names_translated = QStringList(
+        { tr("Enable"), tr("Image"), tr("Name"), tr("Last Modified"), tr("Provider"), tr("Size"), tr("Category"), tr("Update") });
+    m_column_sort_keys = { SortType::ENABLED,  SortType::NAME, SortType::NAME,     SortType::DATE,
+                           SortType::PROVIDER, SortType::SIZE, SortType::CATEGORY, SortType::LOCK_UPDATE };
+    m_column_resize_modes = { QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Stretch,     QHeaderView::Interactive,
+                              QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive };
+    m_columnsHideable = { false, true, false, true, true, true, true, true };
+    m_columnsHiddenByDefault = { false, false, false, false, false, true, false, false };
 }
 
 Task* TexturePackFolderModel::createParseTask(Resource& resource)
@@ -77,6 +81,8 @@ QVariant TexturePackFolderModel::data(const QModelIndex& index, int role) const
                     return m_resources[row]->provider();
                 case SizeColumn:
                     return m_resources[row]->sizeStr();
+                case CategoryColumn:
+                    return m_resources[row]->categories();
                 default:
                     return {};
             }
@@ -112,6 +118,8 @@ QVariant TexturePackFolderModel::data(const QModelIndex& index, int role) const
         case Qt::CheckStateRole:
             if (column == ActiveColumn) {
                 return m_resources[row]->enabled() ? Qt::Checked : Qt::Unchecked;
+            } else if (column == LockUpdateCoumn) {
+                return !m_resources[row]->lockUpdate() ? Qt::Checked : Qt::Unchecked;
             }
             return {};
         default:
@@ -130,6 +138,8 @@ QVariant TexturePackFolderModel::headerData(int section, [[maybe_unused]] Qt::Or
                 case ImageColumn:
                 case ProviderColumn:
                 case SizeColumn:
+                case LockUpdateCoumn:
+                case CategoryColumn:
                     return columnNames().at(section);
                 default:
                     return {};
@@ -146,6 +156,10 @@ QVariant TexturePackFolderModel::headerData(int section, [[maybe_unused]] Qt::Or
                     return tr("The source provider of the texture pack.");
                 case SizeColumn:
                     return tr("The size of the texture pack.");
+                case CategoryColumn:
+                    return tr("The categories of the texture pack.");
+                case LockUpdateCoumn:
+                    return tr("Should this texture pack be updated?");
                 default:
                     return {};
             }

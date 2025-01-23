@@ -51,23 +51,26 @@
 
 #include "Application.h"
 
+#include "minecraft/mod/ResourceFolderModel.h"
 #include "minecraft/mod/tasks/LocalModParseTask.h"
 
 ModFolderModel::ModFolderModel(const QDir& dir, BaseInstance* instance, bool is_indexed, bool create_dir, QObject* parent)
     : ResourceFolderModel(QDir(dir), instance, is_indexed, create_dir, parent)
 {
     m_column_names = QStringList({ "Enable", "Image", "Name", "Version", "Last Modified", "Provider", "Size", "Side", "Loaders",
-                                   "Minecraft Versions", "Release Type" });
-    m_column_names_translated = QStringList({ tr("Enable"), tr("Image"), tr("Name"), tr("Version"), tr("Last Modified"), tr("Provider"),
-                                              tr("Size"), tr("Side"), tr("Loaders"), tr("Minecraft Versions"), tr("Release Type") });
-    m_column_sort_keys = { SortType::ENABLED, SortType::NAME,        SortType::NAME,        SortType::VERSION,
-                           SortType::DATE,    SortType::PROVIDER,    SortType::SIZE,        SortType::SIDE,
-                           SortType::LOADERS, SortType::MC_VERSIONS, SortType::RELEASE_TYPE };
+                                   "Minecraft Versions", "Release Type", "Category", "Update" });
+    m_column_names_translated =
+        QStringList({ tr("Enable"), tr("Image"), tr("Name"), tr("Version"), tr("Last Modified"), tr("Provider"), tr("Size"), tr("Side"),
+                      tr("Loaders"), tr("Minecraft Versions"), tr("Release Type"), tr("Category"), tr("Update") });
+    m_column_sort_keys = { SortType::ENABLED,      SortType::NAME,     SortType::NAME,       SortType::VERSION, SortType::DATE,
+                           SortType::PROVIDER,     SortType::SIZE,     SortType::SIDE,       SortType::LOADERS, SortType::MC_VERSIONS,
+                           SortType::RELEASE_TYPE, SortType::CATEGORY, SortType::LOCK_UPDATE };
     m_column_resize_modes = { QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Stretch,     QHeaderView::Interactive,
                               QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive,
-                              QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive };
-    m_columnsHideable = { false, true, false, true, true, true, true, true, true, true, true };
-    m_columnsHiddenByDefault = { false, false, false, false, false, false, false, true, true, true, true };
+                              QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive,
+                              QHeaderView::Interactive };
+    m_columnsHideable = { false, true, false, true, true, true, true, true, true, true, true, true, true };
+    m_columnsHiddenByDefault = { false, false, false, false, false, false, false, true, true, true, true, false, false };
 }
 
 QVariant ModFolderModel::data(const QModelIndex& index, int role) const
@@ -113,6 +116,8 @@ QVariant ModFolderModel::data(const QModelIndex& index, int role) const
                 }
                 case SizeColumn:
                     return at(row).sizeStr();
+                case CategoryColumn:
+                    return at(row).categories();
                 default:
                     return QVariant();
             }
@@ -148,6 +153,9 @@ QVariant ModFolderModel::data(const QModelIndex& index, int role) const
             switch (column) {
                 case ActiveColumn:
                     return at(row).enabled() ? Qt::Checked : Qt::Unchecked;
+                case LockUpdateCoumn: {
+                    return !at(row).lockUpdate() ? Qt::Checked : Qt::Unchecked;
+                }
                 default:
                     return QVariant();
             }
@@ -172,6 +180,8 @@ QVariant ModFolderModel::headerData(int section, [[maybe_unused]] Qt::Orientatio
                 case McVersionsColumn:
                 case ReleaseTypeColumn:
                 case SizeColumn:
+                case CategoryColumn:
+                case LockUpdateCoumn:
                     return columnNames().at(section);
                 default:
                     return QVariant();
@@ -199,6 +209,10 @@ QVariant ModFolderModel::headerData(int section, [[maybe_unused]] Qt::Orientatio
                     return tr("The release type.");
                 case SizeColumn:
                     return tr("The size of the mod.");
+                case CategoryColumn:
+                    return tr("The categories of the mod.");
+                case LockUpdateCoumn:
+                    return tr("Should this mod be updated?");
                 default:
                     return QVariant();
             }

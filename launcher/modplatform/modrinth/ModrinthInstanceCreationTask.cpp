@@ -314,6 +314,7 @@ bool ModrinthCreationTask::createInstance()
     QEventLoop ensureMetaLoop;
     QDir folder = FS::PathCombine(instance.modsRoot(), ".index");
     auto ensureMetadataTask = makeShared<EnsureMetadataTask>(resources, folder, ModPlatform::ResourceProvider::MODRINTH);
+    ensureMetadataTask->setLockUpdate(true);
     connect(ensureMetadataTask.get(), &Task::succeeded, this, [&ended_well]() { ended_well = true; });
     connect(ensureMetadataTask.get(), &Task::finished, &ensureMetaLoop, &QEventLoop::quit);
     connect(ensureMetadataTask.get(), &Task::progress, [this](qint64 current, qint64 total) {
