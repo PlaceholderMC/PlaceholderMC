@@ -2,6 +2,7 @@
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTest>
+#include <memory>
 
 #include <tasks/Task.h>
 
@@ -42,7 +43,7 @@ class LinkTask : public Task {
 
     ~LinkTask() { delete m_lnk; }
 
-    void matcher(const IPathMatcher* filter) { m_lnk->matcher(filter); }
+    void matcher(IPathMatcher::Ptr filter) { m_lnk->matcher(filter); }
 
     void linkRecursively(bool recursive)
     {
@@ -203,8 +204,8 @@ class FileSystemTest : public QObject {
             qDebug() << tempDir.path();
             qDebug() << target_dir.path();
             FS::copy c(folder, target_dir.path());
-            RegexpMatcher re("[.]?mcmeta");
-            c.matcher(&re);
+            RegexpMatcher::Ptr re = std::make_shared<RegexpMatcher>("[.]?mcmeta");
+            c.matcher(re);
             c();
 
             for (auto entry : target_dir.entryList()) {
@@ -236,8 +237,8 @@ class FileSystemTest : public QObject {
             qDebug() << tempDir.path();
             qDebug() << target_dir.path();
             FS::copy c(folder, target_dir.path());
-            RegexpMatcher re("[.]?mcmeta");
-            c.matcher(&re);
+            RegexpMatcher::Ptr re = std::make_shared<RegexpMatcher>("[.]?mcmeta");
+            c.matcher(re);
             c.whitelist(true);
             c();
 
@@ -429,8 +430,8 @@ class FileSystemTest : public QObject {
             qDebug() << target_dir.path();
 
             LinkTask lnk_tsk(folder, target_dir.path());
-            RegexpMatcher re("[.]?mcmeta");
-            lnk_tsk.matcher(&re);
+            RegexpMatcher::Ptr re = std::make_shared<RegexpMatcher>("[.]?mcmeta");
+            lnk_tsk.matcher(re);
             lnk_tsk.linkRecursively(true);
             QObject::connect(&lnk_tsk, &Task::finished, [&lnk_tsk] {
                 QVERIFY2(lnk_tsk.wasSuccessful(), "Task finished but was not successful when it should have been.");
@@ -476,8 +477,8 @@ class FileSystemTest : public QObject {
             qDebug() << target_dir.path();
 
             LinkTask lnk_tsk(folder, target_dir.path());
-            RegexpMatcher re("[.]?mcmeta");
-            lnk_tsk.matcher(&re);
+            RegexpMatcher::Ptr re = std::make_shared<RegexpMatcher>("[.]?mcmeta");
+            lnk_tsk.matcher(re);
             lnk_tsk.linkRecursively(true);
             lnk_tsk.whitelist(true);
             QObject::connect(&lnk_tsk, &Task::finished, [&lnk_tsk] {

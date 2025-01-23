@@ -166,12 +166,9 @@ void WorldListPage::retranslate()
 
 bool WorldListPage::worldListFilter(QKeyEvent* keyEvent)
 {
-    switch (keyEvent->key()) {
-        case Qt::Key_Delete:
-            on_actionRemove_triggered();
-            return true;
-        default:
-            break;
+    if (keyEvent->key() == Qt::Key_Delete) {
+        on_actionRemove_triggered();
+        return true;
     }
     return QWidget::eventFilter(ui->worldTreeView, keyEvent);
 }
