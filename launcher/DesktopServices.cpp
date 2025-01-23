@@ -84,4 +84,9 @@ bool isSnap()
 #endif
 }
 
+bool isGameScope()
+{
+    return qgetenv("XDG_CURRENT_DESKTOP") == "gamescope";
+}
+
 }  // namespace DesktopServices
