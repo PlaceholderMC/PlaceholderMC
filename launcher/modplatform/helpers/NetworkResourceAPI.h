@@ -5,7 +5,9 @@
 #pragma once
 
 #include <memory>
+#include "modplatform/ModIndex.h"
 #include "modplatform/ResourceAPI.h"
+#include "tasks/Task.h"
 
 class NetworkResourceAPI : public ResourceAPI {
    public:
@@ -16,6 +18,8 @@ class NetworkResourceAPI : public ResourceAPI {
     Task::Ptr getProjectInfo(ProjectInfoArgs&&, ProjectInfoCallbacks&&) const override;
     Task::Ptr getProjectVersions(VersionSearchArgs&&, VersionSearchCallbacks&&) const override;
     Task::Ptr getDependencyVersion(DependencySearchArgs&&, DependencySearchCallbacks&&) const override;
+
+    virtual Task::Ptr getVersionFromHash(QString hash, ModPlatform::IndexedVersion&) = 0;
 
    protected:
     [[nodiscard]] virtual auto getSearchURL(SearchArgs const& args) const -> std::optional<QString> = 0;
