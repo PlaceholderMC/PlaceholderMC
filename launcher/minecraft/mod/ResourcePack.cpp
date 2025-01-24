@@ -42,13 +42,6 @@ void ResourcePack::setPackFormat(int new_format_id)
     m_pack_format = new_format_id;
 }
 
-void ResourcePack::setDescription(QString new_description)
-{
-    QMutexLocker locker(&m_data_lock);
-
-    m_description = new_description;
-}
-
 void ResourcePack::setImage(QImage new_image) const
 {
     QMutexLocker locker(&m_data_lock);
@@ -90,7 +83,7 @@ QPixmap ResourcePack::image(QSize size, Qt::AspectRatioMode mode) const
     }
 
     // Imaged got evicted from the cache. Re-process it and retry.
-    ResourcePackUtils::processPackPNG(*this);
+    ResourcePackUtils::processPackPNG(this);
     return image(size);
 }
 
@@ -101,45 +94,4 @@ std::pair<Version, Version> ResourcePack::compatibleVersions() const
     }
 
     return s_pack_format_versions.constFind(m_pack_format).value();
-}
-
-int ResourcePack::compare(const Resource& other, SortType type) const
-{
-    auto const& cast_other = static_cast<ResourcePack const&>(other);
-    switch (type) {
-        default:
-            return Resource::compare(other, type);
-        case SortType::PACK_FORMAT: {
-            auto this_ver = packFormat();
-            auto other_ver = cast_other.packFormat();
-
-            if (this_ver > other_ver)
-                return 1;
-            if (this_ver < other_ver)
-                return -1;
-            break;
-        }
-    }
-    return 0;
-}
-
-bool ResourcePack::applyFilter(QRegularExpression filter) const
-{
-    if (filter.match(description()).hasMatch())
-        return true;
-
-    if (filter.match(QString::number(packFormat())).hasMatch())
-        return true;
-
-    if (filter.match(compatibleVersions().first.toString()).hasMatch())
-        return true;
-    if (filter.match(compatibleVersions().second.toString()).hasMatch())
-        return true;
-
-    return Resource::applyFilter(filter);
-}
-
-bool ResourcePack::valid() const
-{
-    return m_pack_format != 0;
 }
