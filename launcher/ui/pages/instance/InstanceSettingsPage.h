@@ -35,63 +35,29 @@
 
 #pragma once
 
+#include <Application.h>
+#include <BaseInstance.h>
+#include <ui/pages/BasePage.h>
+#include <ui/widgets/MinecraftSettingsWidget.h>
 #include <QWidget>
 
-#include <QObjectPtr.h>
-#include <QMenu>
-#include "Application.h"
-#include "BaseInstance.h"
-#include "JavaCommon.h"
-#include "java/JavaChecker.h"
-#include "ui/pages/BasePage.h"
-
-class JavaChecker;
-namespace Ui {
-class InstanceSettingsPage;
-}
-
-class InstanceSettingsPage : public QWidget, public BasePage {
+class InstanceSettingsPage : public MinecraftSettingsWidget, public BasePage {
     Q_OBJECT
 
    public:
-    explicit InstanceSettingsPage(BaseInstance* inst, QWidget* parent = 0);
-    virtual ~InstanceSettingsPage();
-    virtual QString displayName() const override { return tr("Settings"); }
-    virtual QIcon icon() const override { return APPLICATION->getThemedIcon("instance-settings"); }
-    virtual QString id() const override { return "settings"; }
-    virtual bool apply() override;
-    virtual QString helpPage() const override { return "Instance-settings"; }
-    void retranslate() override;
-
-    void updateThresholds();
-
-   private slots:
-    void on_javaDetectBtn_clicked();
-    void on_javaTestBtn_clicked();
-    void on_javaBrowseBtn_clicked();
-    void on_javaDownloadBtn_clicked();
-    void on_maxMemSpinBox_valueChanged(int i);
-    void on_serverJoinAddressButton_toggled(bool checked);
-    void on_worldJoinButton_toggled(bool checked);
-
-    void onUseNativeGLFWChanged(bool checked);
-    void onUseNativeOpenALChanged(bool checked);
-
-    void applySettings();
-    void loadSettings();
-
-    void checkerFinished();
-
-    void globalSettingsButtonClicked(bool checked);
-
-    void updateAccountsMenu();
-    QIcon getFaceForAccount(MinecraftAccountPtr account);
-    void changeInstanceAccount(int index);
-
-   private:
-    Ui::InstanceSettingsPage* ui;
-    BaseInstance* m_instance;
-    SettingsObjectPtr m_settings;
-    unique_qobject_ptr<JavaCommon::TestCheck> checker;
-    bool m_world_quickplay_supported;
+    explicit InstanceSettingsPage(MinecraftInstancePtr instance, QWidget* parent = nullptr) : MinecraftSettingsWidget(std::move(instance), parent)
+    {
+        connect(APPLICATION, &Application::globalSettingsAboutToOpen, this, &InstanceSettingsPage::saveSettings);
+        connect(APPLICATION, &Application::globalSettingsClosed, this, &InstanceSettingsPage::loadSettings);
+    }
+    ~InstanceSettingsPage() override {}
+    QString displayName() const override { return tr("Settings"); }
+    QIcon icon() const override { return APPLICATION->getThemedIcon("instance-settings"); }
+    QString id() const override { return "settings"; }
+    bool apply() override
+    {
+        saveSettings();
+        return true;
+    }
+    QString helpPage() const override { return "Instance-settings"; }
 };

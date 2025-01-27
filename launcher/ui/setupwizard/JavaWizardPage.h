@@ -2,7 +2,7 @@
 
 #include "BaseWizardPage.h"
 
-class JavaSettingsWidget;
+class JavaWizardWidget;
 
 class JavaWizardPage : public BaseWizardPage {
     Q_OBJECT
@@ -21,5 +21,5 @@ class JavaWizardPage : public BaseWizardPage {
     void retranslate() override;
 
    private: /* data */
-    JavaSettingsWidget* m_java_widget = nullptr;
+    JavaWizardWidget* m_java_widget = nullptr;
 };

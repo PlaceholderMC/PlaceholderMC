@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>JavaSettingsWidget</class>
+ <widget class="QWidget" name="JavaSettingsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>500</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="javaInstallationGroupBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>Java Insta&amp;llation</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="6" column="0">
+       <widget class="QCheckBox" name="autodetectJavaCheckBox">
+        <property name="text">
+         <string>Auto-&amp;detect Java version</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLineEdit" name="javaPathTextBox"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="javaBrowseBtn">
+          <property name="text">
+           <string>Browse</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QPushButton" name="javaDownloadBtn">
+          <property name="text">
+           <string>Download Java</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="javaDetectBtn">
+          <property name="text">
+           <string>Auto-detect...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="javaTestBtn">
+          <property name="text">
+           <string>Test</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="7" column="0">
+       <widget class="QCheckBox" name="autodownloadJavaCheckBox">
+        <property name="toolTip">
+         <string>Automatically downloads and selects the Java build recommended by Mojang.</string>
+        </property>
+        <property name="text">
+         <string>Auto-download &amp;Mojang Java</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QCheckBox" name="skipWizardCheckBox">
+        <property name="toolTip">
+         <string>If enabled, the launcher won't prompt you to choose a Java version if one is not found on startup.</string>
+        </property>
+        <property name="text">
+         <string>Skip Java setup prompt on startup</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="skipCompatibilityCheckBox">
+        <property name="toolTip">
+         <string>If enabled, the launcher will not check if an instance is compatible with the selected Java version.</string>
+        </property>
+        <property name="text">
+         <string>Skip Java compatibility checks</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="memoryGroupBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>Memor&amp;y</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5" columnstretch="1,0,0">
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelPermGen">
+        <property name="text">
+         <string>PermGen (Java 7 and earlier):</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelMinMem">
+        <property name="text">
+         <string>Minimum memory allocation:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QSpinBox" name="permGenSpinBox">
+        <property name="toolTip">
+         <string>The amount of memory available to store loaded Java classes.</string>
+        </property>
+        <property name="suffix">
+         <string notr="true"> MiB</string>
+        </property>
+        <property name="minimum">
+         <number>4</number>
+        </property>
+        <property name="maximum">
+         <number>999999999</number>
+        </property>
+        <property name="singleStep">
+         <number>8</number>
+        </property>
+        <property name="value">
+         <number>64</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelMaxMem">
+        <property name="text">
+         <string>Maximum memory allocation:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="labelMaxMemIcon">
+        <property name="text">
+         <string notr="true"/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="buddy">
+         <cstring>maxMemSpinBox</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QSpinBox" name="maxMemSpinBox">
+        <property name="toolTip">
+         <string>The maximum amount of memory Minecraft is allowed to use.</string>
+        </property>
+        <property name="suffix">
+         <string notr="true"> MiB</string>
+        </property>
+        <property name="minimum">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <number>1048576</number>
+        </property>
+        <property name="singleStep">
+         <number>128</number>
+        </property>
+        <property name="value">
+         <number>1024</number>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="minMemSpinBox">
+        <property name="toolTip">
+         <string>The amount of memory Minecraft is started with.</string>
+        </property>
+        <property name="suffix">
+         <string notr="true"> MiB</string>
+        </property>
+        <property name="minimum">
+         <number>8</number>
+        </property>
+        <property name="maximum">
+         <number>1048576</number>
+        </property>
+        <property name="singleStep">
+         <number>128</number>
+        </property>
+        <property name="value">
+         <number>256</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="javaArgumentsGroupBox">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>Java Argumen&amp;ts</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_6">
+      <item row="1" column="1">
+       <widget class="QPlainTextEdit" name="jvmArgsTextBox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>javaPathTextBox</tabstop>
+  <tabstop>javaBrowseBtn</tabstop>
+  <tabstop>javaDownloadBtn</tabstop>
+  <tabstop>javaDetectBtn</tabstop>
+  <tabstop>javaTestBtn</tabstop>
+  <tabstop>skipCompatibilityCheckBox</tabstop>
+  <tabstop>skipWizardCheckBox</tabstop>
+  <tabstop>autodetectJavaCheckBox</tabstop>
+  <tabstop>autodownloadJavaCheckBox</tabstop>
+  <tabstop>minMemSpinBox</tabstop>
+  <tabstop>maxMemSpinBox</tabstop>
+  <tabstop>permGenSpinBox</tabstop>
+  <tabstop>jvmArgsTextBox</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
