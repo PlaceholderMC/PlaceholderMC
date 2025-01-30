@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+	<DisplayName>Microsoft Visual C++ Redistributable</DisplayName>
+	<Description>Runtime components required for Prism Launcher</Description>
+	<Version>14.40.33810.0</Version>
+	<ReleaseDate>2024-08-05</ReleaseDate>
+	<!-- TODO: only allow (show?) this to be installed on Windows -->
+	<Default>true</Default>
+	<!--
+	<UserInterfaces>
+	    <UserInterface>page.ui</UserInterface>
+	</UserInterfaces>
+	-->
+	<Script>installscript.js</Script>
+</Package>

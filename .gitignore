@@ -56,3 +56,7 @@ flatbuild
 
 # Snap
 *.snap
+
+# Qt Installer Framework
+program_info/qt-installer/packages/**/data/**
+program_info/qt-installer/**.exe
