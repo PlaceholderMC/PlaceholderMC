@@ -180,8 +180,10 @@ bool LocalWorldSaveParseTask::abort()
 
 void LocalWorldSaveParseTask::executeTask()
 {
-    if (!WorldSaveUtils::process(m_save))
+    if (!WorldSaveUtils::process(m_save)) {
+        emitFailed("this is not a world");
         return;
+    }
 
     if (m_aborted)
         emitAborted();

@@ -38,7 +38,7 @@ class DataPackParseTest : public QObject {
         QString zip_dp = FS::PathCombine(source, "test_data_pack_boogaloo.zip");
         DataPack pack{ QFileInfo(zip_dp) };
 
-        bool valid = DataPackUtils::processZIP(pack);
+        bool valid = DataPackUtils::processZIP(&pack);
 
         QVERIFY(pack.packFormat() == 4);
         QVERIFY(pack.description() == "Some data pack 2 boobgaloo");
@@ -52,7 +52,7 @@ class DataPackParseTest : public QObject {
         QString folder_dp = FS::PathCombine(source, "test_folder");
         DataPack pack{ QFileInfo(folder_dp) };
 
-        bool valid = DataPackUtils::processFolder(pack);
+        bool valid = DataPackUtils::processFolder(&pack);
 
         QVERIFY(pack.packFormat() == 10);
         QVERIFY(pack.description() == "Some data pack, maybe");
@@ -66,7 +66,7 @@ class DataPackParseTest : public QObject {
         QString folder_dp = FS::PathCombine(source, "another_test_folder");
         DataPack pack{ QFileInfo(folder_dp) };
 
-        bool valid = DataPackUtils::process(pack);
+        bool valid = DataPackUtils::process(&pack);
 
         QVERIFY(pack.packFormat() == 6);
         QVERIFY(pack.description() == "Some data pack three, leaves on the tree");
