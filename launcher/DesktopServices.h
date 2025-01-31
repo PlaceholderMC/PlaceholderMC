@@ -41,4 +41,9 @@ bool isFlatpak();
  * Determine whether the launcher is running in a Snap environment
  */
 bool isSnap();
+
+/**
+ * Determine whether the launcher is running in a gamescope environment
+ */
+bool isGameScope();
 }  // namespace DesktopServices

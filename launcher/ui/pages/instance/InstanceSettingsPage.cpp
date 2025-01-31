@@ -36,6 +36,7 @@
  */
 
 #include "InstanceSettingsPage.h"
+#include "DesktopServices.h"
 #include "minecraft/MinecraftInstance.h"
 #include "minecraft/WorldList.h"
 #include "settings/Setting.h"

@@ -230,8 +230,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         // add a close button at the end of the main toolbar when running on gamescope / steam deck
         // this is only needed on gamescope because it defaults to an X11/XWayland session and
         // does not implement decorations
-        if (qgetenv("XDG_CURRENT_DESKTOP") == "gamescope") {
+        if (DesktopServices::isGameScope()) {
             ui->mainToolBar->addAction(ui->actionCloseWindow);
+            showFullScreen();
+            setFixedSize(this->width(), this->height());
         }
 
         ui->actionViewJavaFolder->setEnabled(BuildConfig.JAVA_DOWNLOADER_ENABLED);

@@ -45,6 +45,7 @@
 #include <icons/IconList.h>
 #include <tasks/Task.h>
 
+#include "DesktopServices.h"
 #include "IconPickerDialog.h"
 #include "ProgressDialog.h"
 #include "VersionSelectDialog.h"
@@ -133,19 +134,24 @@ NewInstanceDialog::NewInstanceDialog(const QString& initialGroup,
 
     updateDialogState();
 
-    if (APPLICATION->settings()->get("NewInstanceGeometry").isValid()) {
-        restoreGeometry(QByteArray::fromBase64(APPLICATION->settings()->get("NewInstanceGeometry").toByteArray()));
-    } else {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-        auto screen = parent->screen();
-#else
-        auto screen = QGuiApplication::primaryScreen();
-#endif
-        auto geometry = screen->availableSize();
-        resize(width(), qMin(geometry.height() - 50, 710));
-    }
-
     connect(m_container, &PageContainer::selectedPageChanged, this, &NewInstanceDialog::selectedPageChanged);
+
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    } else {
+        if (APPLICATION->settings()->get("NewInstanceGeometry").isValid()) {
+            restoreGeometry(QByteArray::fromBase64(APPLICATION->settings()->get("NewInstanceGeometry").toByteArray()));
+        } else {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+            auto screen = parent->screen();
+#else
+            auto screen = QGuiApplication::primaryScreen();
+#endif
+            auto geometry = screen->availableSize();
+            resize(width(), qMin(geometry.height() - 50, 710));
+        }
+    }
 }
 
 void NewInstanceDialog::reject()

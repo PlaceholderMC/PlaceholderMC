@@ -42,6 +42,7 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QVBoxLayout>
 
+#include "DesktopServices.h"
 #include "ui/widgets/VersionSelectWidget.h"
 
 #include "BaseVersion.h"
@@ -89,6 +90,10 @@ VersionSelectDialog::VersionSelectDialog(BaseVersionList* vlist, QString title, 
 
     if (!cancelable) {
         m_buttonBox->button(QDialogButtonBox::Cancel)->setEnabled(false);
+    }
+    if (DesktopServices::isGameScope()) {
+        this->showFullScreen();
+        this->setFixedSize(this->width(), this->height());
     }
 }
 

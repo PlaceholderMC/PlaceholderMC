@@ -37,6 +37,7 @@
 #include <QIcon>
 #include "Application.h"
 #include "BuildConfig.h"
+#include "DesktopServices.h"
 #include "Markdown.h"
 #include "StringUtils.h"
 #include "ui_AboutDialog.h"
@@ -180,6 +181,10 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent), ui(new Ui::AboutDia
     connect(ui->closeButton, SIGNAL(clicked()), SLOT(close()));
 
     connect(ui->aboutQt, &QPushButton::clicked, &QApplication::aboutQt);
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    }
 }
 
 AboutDialog::~AboutDialog()

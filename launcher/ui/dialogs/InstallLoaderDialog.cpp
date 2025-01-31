@@ -128,6 +128,10 @@ InstallLoaderDialog::InstallLoaderDialog(std::shared_ptr<PackProfile> profile, c
     connect(container, &PageContainer::selectedPageChanged, this, [this](BasePage* previous, BasePage* current) { validate(current); });
     pageCast(container->selectedPage())->selectSearch();
     validate(container->selectedPage());
+    if (DesktopServices::isGameScope()) {
+        showFullScreen();
+        setFixedSize(this->width(), this->height());
+    }
 }
 
 QList<BasePage*> InstallLoaderDialog::getPages()

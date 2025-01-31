@@ -1551,6 +1551,10 @@ void Application::ShowGlobalSettings(class QWidget* parent, QString open_page)
     {
         SettingsObject::Lock lock(APPLICATION->settings());
         PageDialog dlg(m_globalSettingsProvider.get(), open_page, parent);
+        if (DesktopServices::isGameScope()) {
+            dlg.showFullScreen();
+            dlg.setFixedSize(dlg.width(), dlg.height());
+        }
         dlg.exec();
     }
     emit globalSettingsClosed();
