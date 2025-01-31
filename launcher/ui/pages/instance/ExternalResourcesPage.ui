@@ -226,6 +226,22 @@
     <string>View the homepages of all selected items.</string>
    </property>
   </action>
+  <action name="actionEnableUpdates">
+   <property name="text">
+    <string>Ena&amp;ble Updates</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark resource to be updated</string>
+   </property>
+  </action>
+  <action name="actionDisableUpdates">
+   <property name="text">
+    <string>Disable U&amp;pdates</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark resource to prevent it from being updated</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>

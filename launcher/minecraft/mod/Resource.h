@@ -58,7 +58,7 @@ enum class ResourceStatus {
     UNKNOWN,        // Default status
 };
 
-enum class SortType { NAME, DATE, VERSION, ENABLED, PACK_FORMAT, PROVIDER, SIZE, SIDE, MC_VERSIONS, LOADERS, RELEASE_TYPE };
+enum class SortType { NAME, DATE, VERSION, ENABLED, PACK_FORMAT, PROVIDER, SIZE, SIDE, MC_VERSIONS, LOADERS, RELEASE_TYPE, LOCK_UPDATE };
 
 enum class EnableAction { ENABLE, DISABLE, TOGGLE };
 
@@ -100,6 +100,7 @@ class Resource : public QObject {
     [[nodiscard]] auto metadata() const -> std::shared_ptr<const Metadata::ModStruct> { return m_metadata; }
     [[nodiscard]] auto provider() const -> QString;
     [[nodiscard]] virtual auto homepage() const -> QString;
+    [[nodiscard]] bool lockUpdate() const;
 
     void setStatus(ResourceStatus status) { m_status = status; }
     void setMetadata(std::shared_ptr<Metadata::ModStruct>&& metadata);

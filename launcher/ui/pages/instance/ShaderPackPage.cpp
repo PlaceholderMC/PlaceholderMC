@@ -74,6 +74,9 @@ ShaderPackPage::ShaderPackPage(MinecraftInstance* instance, std::shared_ptr<Shad
     ui->actionChangeVersion->setToolTip(tr("Change a shader pack's version."));
     connect(ui->actionChangeVersion, &QAction::triggered, this, &ShaderPackPage::changeShaderPackVersion);
     ui->actionsToolbar->insertActionAfter(ui->actionUpdateItem, ui->actionChangeVersion);
+
+    ui->actionsToolbar->insertActionAfter(ui->actionUpdateItem, ui->actionEnableUpdates);
+    ui->actionsToolbar->insertActionAfter(ui->actionEnableUpdates, ui->actionDisableUpdates);
 }
 
 void ShaderPackPage::downloadShaderPack()

@@ -213,6 +213,7 @@ void V1::updateModIndex(const QDir& index_dir, Mod& mod)
                                 { "x-prismlauncher-mc-versions", mcVersions },
                                 { "x-prismlauncher-release-type", mod.releaseType.toString().toStdString() },
                                 { "x-prismlauncher-version-number", mod.version_number.toStdString() },
+                                { "x-prismlauncher-lock-update", mod.lockUpdate },
                                 { "download",
                                   toml::table{
                                       { "mode", mod.mode.toStdString() },
@@ -298,6 +299,7 @@ auto V1::getIndexForMod(const QDir& index_dir, QString slug) -> Mod
         mod.filename = stringEntry(table, "filename");
         mod.side = stringToSide(stringEntry(table, "side"));
         mod.releaseType = ModPlatform::IndexedVersionType(table["x-prismlauncher-release-type"].value_or(""));
+        mod.lockUpdate = table["x-prismlauncher-lock-update"].value_or(false);
         if (auto loaders = table["x-prismlauncher-loaders"]; loaders && loaders.is_array()) {
             for (auto&& loader : *loaders.as_array()) {
                 if (loader.is_string()) {
