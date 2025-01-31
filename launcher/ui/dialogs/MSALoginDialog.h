@@ -16,7 +16,6 @@
 #pragma once
 
 #include <QTimer>
-#include <QtCore/QEventLoop>
 #include <QtWidgets/QDialog>
 
 #include "minecraft/auth/AuthFlow.h"
