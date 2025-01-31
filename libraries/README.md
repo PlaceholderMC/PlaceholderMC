@@ -107,6 +107,14 @@ Canonical implementation of the murmur2 hash, taken from [SMHasher](https://gith
 
 Public domain (the author disclaimed the copyright).
 
+## qt-qrcodegenerator
+
+A simple library for generating QR codes
+
+See [github repo](https://github.com/nayuki/QR-Code-generator).
+
+MIT
+
 ## quazip
 
 A zip manipulation library.

@@ -1276,6 +1276,7 @@ target_link_libraries(Launcher_logic
     BuildConfig
     Qt${QT_VERSION_MAJOR}::Widgets
     ghcFilesystem::ghc_filesystem
+    qrcode
 )
 
 if (UNIX AND NOT CYGWIN AND NOT APPLE)
