@@ -62,7 +62,7 @@ class ListModel : public QAbstractListModel {
     Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     void fill(ModpackList modpacks);
-    void addPack(Modpack modpack);
+    void addPack(const Modpack& modpack);
     void clear();
     void remove(int row);
 

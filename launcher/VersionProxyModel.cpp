@@ -193,8 +193,8 @@ QVariant VersionProxyModel::data(const QModelIndex& index, int role) const
                 if (value.toBool()) {
                     return tr("Recommended");
                 } else if (hasLatest) {
-                    auto value = sourceModel()->data(parentIndex, BaseVersionList::LatestRole);
-                    if (value.toBool()) {
+                    auto latest = sourceModel()->data(parentIndex, BaseVersionList::LatestRole);
+                    if (latest.toBool()) {
                         return tr("Latest");
                     }
                 }
@@ -203,33 +203,27 @@ QVariant VersionProxyModel::data(const QModelIndex& index, int role) const
             }
         }
         case Qt::DecorationRole: {
-            switch (column) {
-                case Name: {
-                    if (hasRecommended) {
-                        auto recommenced = sourceModel()->data(parentIndex, BaseVersionList::RecommendedRole);
-                        if (recommenced.toBool()) {
-                            return APPLICATION->getThemedIcon("star");
-                        } else if (hasLatest) {
-                            auto latest = sourceModel()->data(parentIndex, BaseVersionList::LatestRole);
-                            if (latest.toBool()) {
-                                return APPLICATION->getThemedIcon("bug");
-                            }
-                        }
-                        QPixmap pixmap;
-                        QPixmapCache::find("placeholder", &pixmap);
-                        if (!pixmap) {
-                            QPixmap px(16, 16);
-                            px.fill(Qt::transparent);
-                            QPixmapCache::insert("placeholder", px);
-                            return px;
-                        }
-                        return pixmap;
+            if (column == Name && hasRecommended) {
+                auto recommenced = sourceModel()->data(parentIndex, BaseVersionList::RecommendedRole);
+                if (recommenced.toBool()) {
+                    return APPLICATION->getThemedIcon("star");
+                } else if (hasLatest) {
+                    auto latest = sourceModel()->data(parentIndex, BaseVersionList::LatestRole);
+                    if (latest.toBool()) {
+                        return APPLICATION->getThemedIcon("bug");
                     }
                 }
-                default: {
-                    return QVariant();
+                QPixmap pixmap;
+                QPixmapCache::find("placeholder", &pixmap);
+                if (!pixmap) {
+                    QPixmap px(16, 16);
+                    px.fill(Qt::transparent);
+                    QPixmapCache::insert("placeholder", px);
+                    return px;
                 }
+                return pixmap;
             }
+            return QVariant();
         }
         default: {
             if (roles.contains((BaseVersionList::ModelRoles)role)) {

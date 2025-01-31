@@ -316,10 +316,10 @@ class ServersModel : public QAbstractListModel {
         if (row < 0 || row >= m_servers.size())
             return QVariant();
 
-        switch (column) {
-            case 0:
-                switch (role) {
-                    case Qt::DecorationRole: {
+        switch (role) {
+            case Qt::DecorationRole: {
+                switch (column) {
+                    case 0: {
                         auto& bytes = m_servers[row].m_icon;
                         if (bytes.size()) {
                             QPixmap px;
@@ -328,27 +328,24 @@ class ServersModel : public QAbstractListModel {
                         }
                         return APPLICATION->getThemedIcon("unknown_server");
                     }
-                    case Qt::DisplayRole:
-                        return m_servers[row].m_name;
-                    case ServerPtrRole:
-                        return QVariant::fromValue<void*>((void*)&m_servers[row]);
-                    default:
-                        return QVariant();
-                }
-            case 1:
-                switch (role) {
-                    case Qt::DisplayRole:
+                    case 1:
                         return m_servers[row].m_address;
-                    default:
-                        return QVariant();
-                }
-            case 2:
-                switch (role) {
-                    case Qt::DisplayRole:
+                    case 2:
                         return m_servers[row].m_ping;
                     default:
                         return QVariant();
                 }
+            }
+            case Qt::DisplayRole:
+                if (column == 0)
+                    return m_servers[row].m_name;
+                else
+                    return QVariant();
+            case ServerPtrRole:
+                if (column == 0)
+                    return QVariant::fromValue<void*>((void*)&m_servers[row]);
+                else
+                    return QVariant();
             default:
                 return QVariant();
         }

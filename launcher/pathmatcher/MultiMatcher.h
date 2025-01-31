@@ -1,3 +1,5 @@
+#pragma once
+
 #include <SeparatorPrefixTree.h>
 #include <QRegularExpression>
 #include "IPathMatcher.h"

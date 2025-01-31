@@ -105,19 +105,16 @@ std::pair<Version, Version> DataPack::compatibleVersions() const
 int DataPack::compare(const Resource& other, SortType type) const
 {
     auto const& cast_other = static_cast<DataPack const&>(other);
-    switch (type) {
-        default:
-            return Resource::compare(other, type);
-        case SortType::PACK_FORMAT: {
-            auto this_ver = packFormat();
-            auto other_ver = cast_other.packFormat();
+    if (type == SortType::PACK_FORMAT) {
+        auto this_ver = packFormat();
+        auto other_ver = cast_other.packFormat();
 
-            if (this_ver > other_ver)
-                return 1;
-            if (this_ver < other_ver)
-                return -1;
-            break;
-        }
+        if (this_ver > other_ver)
+            return 1;
+        if (this_ver < other_ver)
+            return -1;
+    } else {
+        return Resource::compare(other, type);
     }
     return 0;
 }

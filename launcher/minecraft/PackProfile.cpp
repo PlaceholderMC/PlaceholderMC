@@ -517,13 +517,9 @@ QVariant PackProfile::data(const QModelIndex& index, int role) const
 
     switch (role) {
         case Qt::CheckStateRole: {
-            switch (column) {
-                case NameColumn: {
-                    return patch->isEnabled() ? Qt::Checked : Qt::Unchecked;
-                }
-                default:
-                    return QVariant();
-            }
+            if (column == NameColumn)
+                return patch->isEnabled() ? Qt::Checked : Qt::Unchecked;
+            return QVariant();
         }
         case Qt::DisplayRole: {
             switch (column) {

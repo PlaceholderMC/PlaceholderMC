@@ -517,12 +517,9 @@ QVariant ResourceFolderModel::data(const QModelIndex& index, int role) const
             return {};
         }
         case Qt::CheckStateRole:
-            switch (column) {
-                case ActiveColumn:
-                    return m_resources[row]->enabled() ? Qt::Checked : Qt::Unchecked;
-                default:
-                    return {};
-            }
+            if (column == ActiveColumn)
+                return m_resources[row]->enabled() ? Qt::Checked : Qt::Unchecked;
+            return {};
         default:
             return {};
     }

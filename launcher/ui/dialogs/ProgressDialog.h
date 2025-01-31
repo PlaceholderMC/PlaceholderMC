@@ -93,7 +93,7 @@ class ProgressDialog : public QDialog {
     Ui::ProgressDialog* ui;
 
     Task* m_task;
-    
+
     QList<QMetaObject::Connection> m_taskConnections;
 
     bool m_is_multi_step = false;
