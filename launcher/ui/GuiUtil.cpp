@@ -42,6 +42,7 @@
 #include <QFileDialog>
 #include <QStandardPaths>
 
+#include "QObjectPtr.h"
 #include "net/PasteUpload.h"
 #include "ui/dialogs/CustomMessageBox.h"
 #include "ui/dialogs/ProgressDialog.h"
@@ -123,12 +124,8 @@ std::optional<QString> GuiUtil::uploadPaste(const QString& name, const QString& 
         }
     }
 
-    QString textToUpload = text;
-    if (shouldTruncate) {
-        textToUpload = truncateLogForMclogs(text);
-    }
-
-    std::unique_ptr<PasteUpload> paste(new PasteUpload(parentWidget, textToUpload, pasteCustomAPIBaseSetting, pasteTypeSetting));
+    auto paste = makeShared<PasteUpload>(shouldTruncate ? truncateLogForMclogs(text) : text, pasteCustomAPIBaseSetting, pasteTypeSetting);
+    paste->setNetwork(APPLICATION->network());
 
     dialog.execWithTask(paste.get());
     if (!paste->wasSuccessful()) {
