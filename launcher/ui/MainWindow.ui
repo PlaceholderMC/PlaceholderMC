@@ -215,6 +215,7 @@
     </property>
     <addaction name="actionClearMetadata"/>
     <addaction name="actionReportBug"/>
+    <addaction name="actionUploadLog"/>
     <addaction name="actionAddToPATH"/>
     <addaction name="separator"/>
     <addaction name="actionMATRIX"/>
@@ -694,6 +695,18 @@
    </property>
    <property name="toolTip">
     <string>Clear cached metadata</string>
+   </property>
+  </action>
+  <action name="actionUploadLog">
+   <property name="icon">
+    <iconset theme="log">
+     <normaloff>.</normaloff>.</iconset>
+   </property>
+   <property name="text">
+    <string>Upload logs</string>
+   </property>
+   <property name="toolTip">
+    <string>Upload launcher logs to the selected log provider</string>
    </property>
   </action>
   <action name="actionAddToPATH">
