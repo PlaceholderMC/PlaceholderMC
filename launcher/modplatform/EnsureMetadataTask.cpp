@@ -501,7 +501,7 @@ void EnsureMetadataTask::modrinthCallback(ModPlatform::IndexedPack& pack, ModPla
     QDir tmp_index_dir(m_index_dir);
 
     {
-        LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver);
+        LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver, m_lockUpdate);
         QEventLoop loop;
 
         QObject::connect(&update_metadata, &Task::finished, &loop, &QEventLoop::quit);
@@ -535,7 +535,7 @@ void EnsureMetadataTask::flameCallback(ModPlatform::IndexedPack& pack, ModPlatfo
         QDir tmp_index_dir(m_index_dir);
 
         {
-            LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver);
+            LocalResourceUpdateTask update_metadata(m_index_dir, pack, ver, m_lockUpdate);
             QEventLoop loop;
 
             QObject::connect(&update_metadata, &Task::finished, &loop, &QEventLoop::quit);

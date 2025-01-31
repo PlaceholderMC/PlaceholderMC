@@ -137,7 +137,7 @@ class ResourceFolderModel : public QAbstractListModel {
     /* Qt behavior */
 
     /* Basic columns */
-    enum Columns { ActiveColumn = 0, NameColumn, DateColumn, ProviderColumn, SizeColumn, NUM_COLUMNS };
+    enum Columns { ActiveColumn = 0, NameColumn, DateColumn, ProviderColumn, SizeColumn, CategoryColumn, LockUpdateCoumn, NUM_COLUMNS };
 
     QStringList columnNames(bool translated = true) const { return translated ? m_column_names_translated : m_column_names; }
 
@@ -182,6 +182,12 @@ class ResourceFolderModel : public QAbstractListModel {
     };
 
     QString instDirPath() const;
+
+    bool setResourceUpdate(const QModelIndexList& indexes, EnableAction action);
+    bool addResourceCategory(const QModelIndexList& indexes, QString category);
+    bool removeResourceCategory(const QModelIndexList& indexes, QString category);
+    bool removeAllResourceCategory(const QModelIndexList& indexes);
+    [[nodiscard]] QStringList categories();
 
    signals:
     void updateFinished();
@@ -237,13 +243,16 @@ class ResourceFolderModel : public QAbstractListModel {
    protected:
     // Represents the relationship between a column's index (represented by the list index), and it's sorting key.
     // As such, the order in with they appear is very important!
-    QList<SortType> m_column_sort_keys = { SortType::ENABLED, SortType::NAME, SortType::DATE, SortType::PROVIDER, SortType::SIZE };
-    QStringList m_column_names = { "Enable", "Name", "Last Modified", "Provider", "Size" };
-    QStringList m_column_names_translated = { tr("Enable"), tr("Name"), tr("Last Modified"), tr("Provider"), tr("Size") };
-    QList<QHeaderView::ResizeMode> m_column_resize_modes = { QHeaderView::Interactive, QHeaderView::Stretch, QHeaderView::Interactive,
-                                                             QHeaderView::Interactive, QHeaderView::Interactive };
-    QList<bool> m_columnsHideable = { false, false, true, true, true };
-    QList<bool> m_columnsHiddenByDefault = { false, false, false, false, true };
+    QList<SortType> m_column_sort_keys = { SortType::ENABLED, SortType::NAME,     SortType::DATE,       SortType::PROVIDER,
+                                           SortType::SIZE,    SortType::CATEGORY, SortType::LOCK_UPDATE };
+    QStringList m_column_names = { "Enable", "Name", "Last Modified", "Provider", "Size", "Category", "Update" };
+    QStringList m_column_names_translated = { tr("Enable"), tr("Name"),     tr("Last Modified"), tr("Provider"),
+                                              tr("Size"),   tr("Category"), tr("Update") };
+    QList<QHeaderView::ResizeMode> m_column_resize_modes = { QHeaderView::Interactive, QHeaderView::Stretch,     QHeaderView::Interactive,
+                                                             QHeaderView::Interactive, QHeaderView::Interactive, QHeaderView::Interactive,
+                                                             QHeaderView::Interactive };
+    QList<bool> m_columnsHideable = { false, false, true, true, true, true, true };
+    QList<bool> m_columnsHiddenByDefault = { false, false, false, false, true, false, false };
 
     QDir m_dir;
     BaseInstance* m_instance;

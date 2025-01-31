@@ -215,6 +215,30 @@
     <enum>QAction::NoRole</enum>
    </property>
   </action>
+  <action name="actionAddCategory">
+   <property name="text">
+    <string>Add Category</string>
+   </property>
+   <property name="toolTip">
+    <string>Add category to resource.</string>
+   </property>
+  </action>
+  <action name="actionRemoveCategory">
+   <property name="text">
+    <string>Remove Category</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove category from resource.</string>
+   </property>
+  </action>
+  <action name="actionRemoveAllCategory">
+   <property name="text">
+    <string>Remove All Categories</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove all categories from resource</string>
+   </property>
+  </action>
   <action name="actionViewHomepage">
    <property name="enabled">
     <bool>false</bool>
@@ -224,6 +248,22 @@
    </property>
    <property name="toolTip">
     <string>View the homepages of all selected items.</string>
+   </property>
+  </action>
+  <action name="actionEnableUpdates">
+   <property name="text">
+    <string>Ena&amp;ble Updates</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark resource to be updated</string>
+   </property>
+  </action>
+  <action name="actionDisableUpdates">
+   <property name="text">
+    <string>Disable U&amp;pdates</string>
+   </property>
+   <property name="toolTip">
+    <string>Mark resource to prevent it from being updated</string>
    </property>
   </action>
  </widget>

@@ -44,7 +44,17 @@ class TexturePackFolderModel : public ResourceFolderModel {
     Q_OBJECT
 
    public:
-    enum Columns { ActiveColumn = 0, ImageColumn, NameColumn, DateColumn, ProviderColumn, SizeColumn, NUM_COLUMNS };
+    enum Columns {
+        ActiveColumn = 0,
+        ImageColumn,
+        NameColumn,
+        DateColumn,
+        ProviderColumn,
+        SizeColumn,
+        CategoryColumn,
+        LockUpdateCoumn,
+        NUM_COLUMNS
+    };
 
     explicit TexturePackFolderModel(const QDir& dir, BaseInstance* instance, bool is_indexed, bool create_dir, QObject* parent = nullptr);
 

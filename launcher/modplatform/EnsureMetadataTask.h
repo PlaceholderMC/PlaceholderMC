@@ -22,6 +22,7 @@ class EnsureMetadataTask : public Task {
     ~EnsureMetadataTask() = default;
 
     Task::Ptr getHashingTask() { return m_hashingTask; }
+    void setLockUpdate(bool lockUpdate) { m_lockUpdate = lockUpdate; }
 
    public slots:
     bool abort() override;
@@ -61,4 +62,5 @@ class EnsureMetadataTask : public Task {
     QHash<QString, ModPlatform::IndexedVersion> m_temp_versions;
     Task::Ptr m_hashingTask;
     Task::Ptr m_current_task;
+    bool m_lockUpdate = false;
 };

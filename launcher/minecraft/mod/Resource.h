@@ -58,7 +58,21 @@ enum class ResourceStatus {
     UNKNOWN,        // Default status
 };
 
-enum class SortType { NAME, DATE, VERSION, ENABLED, PACK_FORMAT, PROVIDER, SIZE, SIDE, MC_VERSIONS, LOADERS, RELEASE_TYPE };
+enum class SortType {
+    NAME,
+    DATE,
+    VERSION,
+    ENABLED,
+    PACK_FORMAT,
+    PROVIDER,
+    SIZE,
+    SIDE,
+    MC_VERSIONS,
+    LOADERS,
+    RELEASE_TYPE,
+    CATEGORY,
+    LOCK_UPDATE
+};
 
 enum class EnableAction { ENABLE, DISABLE, TOGGLE };
 
@@ -100,6 +114,8 @@ class Resource : public QObject {
     [[nodiscard]] auto metadata() const -> std::shared_ptr<const Metadata::ModStruct> { return m_metadata; }
     [[nodiscard]] auto provider() const -> QString;
     [[nodiscard]] virtual auto homepage() const -> QString;
+    [[nodiscard]] QString categories() const;
+    [[nodiscard]] bool lockUpdate() const;
 
     void setStatus(ResourceStatus status) { m_status = status; }
     void setMetadata(std::shared_ptr<Metadata::ModStruct>&& metadata);
@@ -116,6 +132,7 @@ class Resource : public QObject {
      *  or if such filter includes the Resource (true).
      */
     [[nodiscard]] virtual bool applyFilter(QRegularExpression filter) const;
+    [[nodiscard]] bool checkCategories(QRegularExpression filter, bool& match) const;
 
     /** Changes the enabled property, according to 'action'.
      *
