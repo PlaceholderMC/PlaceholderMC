@@ -2,7 +2,7 @@
 /*
  *  Prism Launcher - Minecraft Launcher
  *  Copyright (c) 2022 Jamie Mansfield <jmansfield@cadixdev.org>
- *  Copyright (C) 2022 Sefa Eyeoglu <contact@scrumplex.net>
+ *  Copyright (C) 2024 TheKodeToad <TheKodeToad@proton.me>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,51 +34,31 @@
  *      limitations under the License.
  */
 
-#include "CustomCommandsPage.h"
-#include <QTabBar>
-#include <QTabWidget>
-#include <QVBoxLayout>
+#pragma once
 
-CustomCommandsPage::CustomCommandsPage(QWidget* parent) : QWidget(parent)
-{
-    auto verticalLayout = new QVBoxLayout(this);
-    verticalLayout->setObjectName(QStringLiteral("verticalLayout"));
-    verticalLayout->setContentsMargins(0, 0, 0, 0);
+#include <minecraft/MinecraftInstance.h>
+#include <QWidget>
+#include "JavaSettingsWidget.h"
 
-    auto tabWidget = new QTabWidget(this);
-    tabWidget->setObjectName(QStringLiteral("tabWidget"));
-    commands = new CustomCommands(this);
-    commands->setContentsMargins(6, 6, 6, 6);
-    tabWidget->addTab(commands, "Foo");
-    tabWidget->tabBar()->hide();
-    verticalLayout->addWidget(tabWidget);
-    loadSettings();
+namespace Ui {
+class MinecraftSettingsWidget;
 }
 
-CustomCommandsPage::~CustomCommandsPage() {}
+class MinecraftSettingsWidget : public QWidget {
+   public:
+    MinecraftSettingsWidget(MinecraftInstancePtr instance, QWidget* parent = nullptr);
+    ~MinecraftSettingsWidget() override;
 
-bool CustomCommandsPage::apply()
-{
-    applySettings();
-    return true;
-}
+    void loadSettings();
+    void saveSettings();
 
-void CustomCommandsPage::applySettings()
-{
-    auto s = APPLICATION->settings();
-    s->set("PreLaunchCommand", commands->prelaunchCommand());
-    s->set("WrapperCommand", commands->wrapperCommand());
-    s->set("PostExitCommand", commands->postexitCommand());
-}
+   private:
+    void openGlobalSettings();
+    void updateAccountsMenu(const SettingsObject& settings);
+    bool isQuickPlaySupported();
 
-void CustomCommandsPage::loadSettings()
-{
-    auto s = APPLICATION->settings();
-    commands->initialize(false, true, s->get("PreLaunchCommand").toString(), s->get("WrapperCommand").toString(),
-                         s->get("PostExitCommand").toString());
-}
-
-void CustomCommandsPage::retranslate()
-{
-    commands->retranslate();
-}
+    MinecraftInstancePtr m_instance;
+    Ui::MinecraftSettingsWidget* m_ui;
+    JavaSettingsWidget* m_javaSettings = nullptr;
+    bool m_quickPlaySingleplayer = false;
+};

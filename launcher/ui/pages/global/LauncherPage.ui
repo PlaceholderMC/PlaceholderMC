@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>511</width>
+    <width>562</width>
     <height>726</height>
    </rect>
   </property>
@@ -38,7 +38,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="featuresTab">
       <attribute name="title">
@@ -58,8 +58,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>473</width>
-            <height>770</height>
+            <width>570</width>
+            <height>692</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_8">
@@ -538,36 +538,6 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QGroupBox" name="consoleSettingsBox">
-         <property name="title">
-          <string>Console Settings</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QCheckBox" name="showConsoleCheck">
-            <property name="text">
-             <string>Show console while the game is &amp;running</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="autoCloseConsoleCheck">
-            <property name="text">
-             <string>&amp;Automatically close console when the game quits</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="showConsoleErrorCheck">
-            <property name="text">
-             <string>Show console when the game &amp;crashes</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
           <string>&amp;History limit</string>
@@ -708,9 +678,6 @@
   <tabstop>sortByNameBtn</tabstop>
   <tabstop>catOpacitySpinBox</tabstop>
   <tabstop>preferMenuBarCheckBox</tabstop>
-  <tabstop>showConsoleCheck</tabstop>
-  <tabstop>autoCloseConsoleCheck</tabstop>
-  <tabstop>showConsoleErrorCheck</tabstop>
   <tabstop>lineLimitSpinBox</tabstop>
   <tabstop>checkStopLogging</tabstop>
   <tabstop>consoleFont</tabstop>

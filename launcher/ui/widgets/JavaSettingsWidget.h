@@ -1,106 +1,67 @@
+// SPDX-License-Identifier: GPL-3.0-only
+/*
+ *  Prism Launcher - Minecraft Launcher
+ *  Copyright (c) 2022 Jamie Mansfield <jmansfield@cadixdev.org>
+ *  Copyright (C) 2024 TheKodeToad <TheKodeToad@proton.me>
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, version 3.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * This file incorporates work covered by the following copyright and
+ * permission notice:
+ *
+ *      Copyright 2013-2021 MultiMC Contributors
+ *
+ *      Licensed under the Apache License, Version 2.0 (the "License");
+ *      you may not use this file except in compliance with the License.
+ *      You may obtain a copy of the License at
+ *
+ *          http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *      Unless required by applicable law or agreed to in writing, software
+ *      distributed under the License is distributed on an "AS IS" BASIS,
+ *      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *      See the License for the specific language governing permissions and
+ *      limitations under the License.
+ */
+
 #pragma once
+
+#include <BaseInstance.h>
+#include <JavaCommon.h>
 #include <QWidget>
 
-#include <BaseVersion.h>
-#include <QObjectPtr.h>
-#include <java/JavaChecker.h>
-#include <qcheckbox.h>
-#include <QIcon>
+namespace Ui {
+class JavaSettingsWidget;
+}
 
-class QLineEdit;
-class VersionSelectWidget;
-class QSpinBox;
-class QPushButton;
-class QVBoxLayout;
-class QHBoxLayout;
-class QGroupBox;
-class QGridLayout;
-class QLabel;
-class QToolButton;
-class QSpacerItem;
-
-/**
- * This is a widget for all the Java settings dialogs and pages.
- */
 class JavaSettingsWidget : public QWidget {
     Q_OBJECT
 
    public:
-    explicit JavaSettingsWidget(QWidget* parent);
-    virtual ~JavaSettingsWidget();
+    explicit JavaSettingsWidget(InstancePtr instance, QWidget* parent = nullptr);
+    ~JavaSettingsWidget() override;
 
-    enum class JavaStatus { NotSet, Pending, Good, DoesNotExist, DoesNotStart, ReturnedInvalidData } javaStatus = JavaStatus::NotSet;
+    void loadSettings();
+    void saveSettings();
 
-    enum class ValidationStatus { Bad, JavaBad, AllOK };
-
-    void refresh();
-    void initialize();
-    ValidationStatus validate();
-    void retranslate();
-
-    bool permGenEnabled() const;
-    int permGenSize() const;
-    int minHeapSize() const;
-    int maxHeapSize() const;
-    QString javaPath() const;
-    bool autoDetectJava() const;
-    bool autoDownloadJava() const;
-
+   private slots:
+    void onJavaBrowse();
+    void onJavaAutodetect();
+    void onJavaTest();
     void updateThresholds();
 
-   protected slots:
-    void onSpinBoxValueChanged(int);
-    void memoryValueChanged();
-    void javaPathEdited(const QString& path);
-    void javaVersionSelected(BaseVersion::Ptr version);
-    void on_javaBrowseBtn_clicked();
-    void on_javaStatusBtn_clicked();
-    void javaDownloadBtn_clicked();
-    void checkFinished(const JavaChecker::Result& result);
-
-   protected: /* methods */
-    void checkJavaPathOnEdit(const QString& path);
-    void checkJavaPath(const QString& path);
-    void setJavaStatus(JavaStatus status);
-    void setupUi();
-
-   private: /* data */
-    VersionSelectWidget* m_versionWidget = nullptr;
-    QVBoxLayout* m_verticalLayout = nullptr;
-    QSpacerItem* m_verticalSpacer = nullptr;
-
-    QLineEdit* m_javaPathTextBox = nullptr;
-    QPushButton* m_javaBrowseBtn = nullptr;
-    QToolButton* m_javaStatusBtn = nullptr;
-    QHBoxLayout* m_horizontalLayout = nullptr;
-
-    QGroupBox* m_memoryGroupBox = nullptr;
-    QGridLayout* m_gridLayout_2 = nullptr;
-    QSpinBox* m_maxMemSpinBox = nullptr;
-    QLabel* m_labelMinMem = nullptr;
-    QLabel* m_labelMaxMem = nullptr;
-    QLabel* m_labelMaxMemIcon = nullptr;
-    QSpinBox* m_minMemSpinBox = nullptr;
-    QLabel* m_labelPermGen = nullptr;
-    QSpinBox* m_permGenSpinBox = nullptr;
-
-    QHBoxLayout* m_horizontalBtnLayout = nullptr;
-    QPushButton* m_javaDownloadBtn = nullptr;
-    QIcon goodIcon;
-    QIcon yellowIcon;
-    QIcon badIcon;
-
-    QGroupBox* m_autoJavaGroupBox = nullptr;
-    QVBoxLayout* m_veriticalJavaLayout = nullptr;
-    QCheckBox* m_autodetectJavaCheckBox = nullptr;
-    QCheckBox* m_autodownloadCheckBox = nullptr;
-
-    unsigned int observedMinMemory = 0;
-    unsigned int observedMaxMemory = 0;
-    unsigned int observedPermGenMemory = 0;
-    QString queuedCheck;
-    uint64_t m_availableMemory = 0ull;
-    shared_qobject_ptr<JavaChecker> m_checker;
-    JavaChecker::Result m_result;
-    QTimer* m_memoryTimer;
+   private:
+    InstancePtr m_instance;
+    Ui::JavaSettingsWidget* m_ui;
+    unique_qobject_ptr<JavaCommon::TestCheck> m_checker;
 };

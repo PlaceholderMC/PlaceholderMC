@@ -62,6 +62,9 @@
 JavaPage::JavaPage(QWidget* parent) : QWidget(parent), ui(new Ui::JavaPage)
 {
     ui->setupUi(this);
+    
+    m_javaSettings = new JavaSettingsWidget(nullptr, this);
+    ui->generalScrollArea->setWidget(m_javaSettings);
 
     if (BuildConfig.JAVA_DOWNLOADER_ENABLED) {
         ui->managedJavaList->initialize(new JavaInstallList(this, true));
@@ -69,18 +72,8 @@ JavaPage::JavaPage(QWidget* parent) : QWidget(parent), ui(new Ui::JavaPage)
         ui->managedJavaList->selectCurrent();
         ui->managedJavaList->setEmptyString(tr("No managed Java versions are installed"));
         ui->managedJavaList->setEmptyErrorString(tr("Couldn't load the managed Java list!"));
-        connect(ui->autodetectJavaCheckBox, &QCheckBox::stateChanged, this, [this] {
-            ui->autodownloadCheckBox->setEnabled(ui->autodetectJavaCheckBox->isChecked());
-            if (!ui->autodetectJavaCheckBox->isChecked())
-                ui->autodownloadCheckBox->setChecked(false);
-        });
-    } else {
-        ui->autodownloadCheckBox->setHidden(true);
+    } else
         ui->tabWidget->tabBar()->hide();
-    }
-
-    loadSettings();
-    updateThresholds();
 }
 
 JavaPage::~JavaPage()
@@ -88,115 +81,16 @@ JavaPage::~JavaPage()
     delete ui;
 }
 
+void JavaPage::retranslate()
+{
+    ui->retranslateUi(this);
+}
+
 bool JavaPage::apply()
 {
-    applySettings();
+    m_javaSettings->saveSettings();
+    JavaCommon::checkJVMArgs(APPLICATION->settings()->get("JvmArgs").toString(), this);
     return true;
-}
-
-void JavaPage::applySettings()
-{
-    auto s = APPLICATION->settings();
-
-    // Memory
-    int min = ui->minMemSpinBox->value();
-    int max = ui->maxMemSpinBox->value();
-    if (min < max) {
-        s->set("MinMemAlloc", min);
-        s->set("MaxMemAlloc", max);
-    } else {
-        s->set("MinMemAlloc", max);
-        s->set("MaxMemAlloc", min);
-    }
-    s->set("PermGen", ui->permGenSpinBox->value());
-
-    // Java Settings
-    s->set("JavaPath", ui->javaPathTextBox->text());
-    s->set("JvmArgs", ui->jvmArgsTextBox->toPlainText().replace("\n", " "));
-    s->set("IgnoreJavaCompatibility", ui->skipCompatibilityCheckbox->isChecked());
-    s->set("IgnoreJavaWizard", ui->skipJavaWizardCheckbox->isChecked());
-    s->set("AutomaticJavaSwitch", ui->autodetectJavaCheckBox->isChecked());
-    s->set("AutomaticJavaDownload", ui->autodownloadCheckBox->isChecked());
-    JavaCommon::checkJVMArgs(s->get("JvmArgs").toString(), this->parentWidget());
-}
-void JavaPage::loadSettings()
-{
-    auto s = APPLICATION->settings();
-    // Memory
-    int min = s->get("MinMemAlloc").toInt();
-    int max = s->get("MaxMemAlloc").toInt();
-    if (min < max) {
-        ui->minMemSpinBox->setValue(min);
-        ui->maxMemSpinBox->setValue(max);
-    } else {
-        ui->minMemSpinBox->setValue(max);
-        ui->maxMemSpinBox->setValue(min);
-    }
-    ui->permGenSpinBox->setValue(s->get("PermGen").toInt());
-
-    // Java Settings
-    ui->javaPathTextBox->setText(s->get("JavaPath").toString());
-    ui->jvmArgsTextBox->setPlainText(s->get("JvmArgs").toString());
-    ui->skipCompatibilityCheckbox->setChecked(s->get("IgnoreJavaCompatibility").toBool());
-    ui->skipJavaWizardCheckbox->setChecked(s->get("IgnoreJavaWizard").toBool());
-    ui->autodetectJavaCheckBox->setChecked(s->get("AutomaticJavaSwitch").toBool());
-    ui->autodownloadCheckBox->setChecked(s->get("AutomaticJavaSwitch").toBool() && s->get("AutomaticJavaDownload").toBool());
-}
-
-void JavaPage::on_javaDetectBtn_clicked()
-{
-    if (JavaUtils::getJavaCheckPath().isEmpty()) {
-        JavaCommon::javaCheckNotFound(this);
-        return;
-    }
-
-    JavaInstallPtr java;
-
-    VersionSelectDialog vselect(APPLICATION->javalist().get(), tr("Select a Java version"), this, true);
-    vselect.setResizeOn(2);
-    vselect.exec();
-
-    if (vselect.result() == QDialog::Accepted && vselect.selectedVersion()) {
-        java = std::dynamic_pointer_cast<JavaInstall>(vselect.selectedVersion());
-        ui->javaPathTextBox->setText(java->path);
-        if (!java->is_64bit && APPLICATION->settings()->get("MaxMemAlloc").toInt() > 2048) {
-            CustomMessageBox::selectable(this, tr("Confirm Selection"),
-                                         tr("You selected a 32-bit version of Java.\n"
-                                            "This installation does not support more than 2048MiB of RAM.\n"
-                                            "Please make sure that the maximum memory value is lower."),
-                                         QMessageBox::Warning, QMessageBox::Ok, QMessageBox::Ok)
-                ->exec();
-        }
-    }
-}
-
-void JavaPage::on_javaBrowseBtn_clicked()
-{
-    QString raw_path = QFileDialog::getOpenFileName(this, tr("Find Java executable"));
-
-    // do not allow current dir - it's dirty. Do not allow dirs that don't exist
-    if (raw_path.isEmpty()) {
-        return;
-    }
-
-    QString cooked_path = FS::NormalizePath(raw_path);
-    QFileInfo javaInfo(cooked_path);
-    ;
-    if (!javaInfo.exists() || !javaInfo.isExecutable()) {
-        return;
-    }
-    ui->javaPathTextBox->setText(cooked_path);
-}
-
-void JavaPage::on_javaTestBtn_clicked()
-{
-    if (checker) {
-        return;
-    }
-    checker.reset(new JavaCommon::TestCheck(this, ui->javaPathTextBox->text(), ui->jvmArgsTextBox->toPlainText().replace("\n", " "),
-                                            ui->minMemSpinBox->value(), ui->maxMemSpinBox->value(), ui->permGenSpinBox->value()));
-    connect(checker.get(), SIGNAL(finished()), SLOT(checkerFinished()));
-    checker->run();
 }
 
 void JavaPage::on_downloadJavaButton_clicked()
@@ -204,51 +98,6 @@ void JavaPage::on_downloadJavaButton_clicked()
     auto jdialog = new Java::InstallDialog({}, nullptr, this);
     jdialog->exec();
     ui->managedJavaList->loadList();
-}
-
-void JavaPage::on_maxMemSpinBox_valueChanged([[maybe_unused]] int i)
-{
-    updateThresholds();
-}
-
-void JavaPage::checkerFinished()
-{
-    checker.reset();
-}
-
-void JavaPage::retranslate()
-{
-    ui->retranslateUi(this);
-}
-
-void JavaPage::updateThresholds()
-{
-    auto sysMiB = Sys::getSystemRam() / Sys::mebibyte;
-    unsigned int maxMem = ui->maxMemSpinBox->value();
-    unsigned int minMem = ui->minMemSpinBox->value();
-
-    QString iconName;
-
-    if (maxMem >= sysMiB) {
-        iconName = "status-bad";
-        ui->labelMaxMemIcon->setToolTip(tr("Your maximum memory allocation exceeds your system memory capacity."));
-    } else if (maxMem > (sysMiB * 0.9)) {
-        iconName = "status-yellow";
-        ui->labelMaxMemIcon->setToolTip(tr("Your maximum memory allocation approaches your system memory capacity."));
-    } else if (maxMem < minMem) {
-        iconName = "status-yellow";
-        ui->labelMaxMemIcon->setToolTip(tr("Your maximum memory allocation is smaller than the minimum value"));
-    } else {
-        iconName = "status-good";
-        ui->labelMaxMemIcon->setToolTip("");
-    }
-
-    {
-        auto height = ui->labelMaxMemIcon->fontInfo().pixelSize();
-        QIcon icon = APPLICATION->getThemedIcon(iconName);
-        QPixmap pix = icon.pixmap(height, height);
-        ui->labelMaxMemIcon->setPixmap(pix);
-    }
 }
 
 void JavaPage::on_removeJavaButton_clicked()
