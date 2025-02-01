@@ -44,6 +44,7 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 
+#include "Application.h"
 #include "settings/INISettingsObject.h"
 #include "settings/OverrideSetting.h"
 #include "settings/Setting.h"
@@ -174,6 +175,12 @@ void BaseInstance::copyManagedPack(BaseInstance& other)
     m_settings->set("ManagedPackName", other.getManagedPackName());
     m_settings->set("ManagedPackVersionID", other.getManagedPackVersionID());
     m_settings->set("ManagedPackVersionName", other.getManagedPackVersionName());
+
+    if (APPLICATION->settings()->get("AutomaticJavaSwitch").toBool() && m_settings->get("AutomaticJava").toBool() &&
+        m_settings->get("OverrideJavaLocation").toBool()) {
+        m_settings->set("OverrideJavaLocation", false);
+        m_settings->set("JavaPath", "");
+    }
 }
 
 int BaseInstance::getConsoleMaxLines() const
