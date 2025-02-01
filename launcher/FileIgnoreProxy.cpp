@@ -40,12 +40,11 @@
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
 #include <QStack>
-#include <algorithm>
 #include "FileSystem.h"
 #include "SeparatorPrefixTree.h"
 #include "StringUtils.h"
 
-FileIgnoreProxy::FileIgnoreProxy(QString root, QObject* parent) : QSortFilterProxyModel(parent), root(root) {}
+FileIgnoreProxy::FileIgnoreProxy(QString root, QObject* parent) : QSortFilterProxyModel(parent), m_root(root) {}
 // NOTE: Sadly, we have to do sorting ourselves.
 bool FileIgnoreProxy::lessThan(const QModelIndex& left, const QModelIndex& right) const
 {
@@ -104,10 +103,10 @@ QVariant FileIgnoreProxy::data(const QModelIndex& index, int role) const
     if (index.column() == 0 && role == Qt::CheckStateRole) {
         QFileSystemModel* fsm = qobject_cast<QFileSystemModel*>(sourceModel());
         auto blockedPath = relPath(fsm->filePath(sourceIndex));
-        auto cover = blocked.cover(blockedPath);
+        auto cover = m_blocked.cover(blockedPath);
         if (!cover.isNull()) {
             return QVariant(Qt::Unchecked);
-        } else if (blocked.exists(blockedPath)) {
+        } else if (m_blocked.exists(blockedPath)) {
             return QVariant(Qt::PartiallyChecked);
         } else {
             return QVariant(Qt::Checked);
@@ -130,7 +129,7 @@ bool FileIgnoreProxy::setData(const QModelIndex& index, const QVariant& value, i
 
 QString FileIgnoreProxy::relPath(const QString& path) const
 {
-    return QDir(root).relativeFilePath(path);
+    return QDir(m_root).relativeFilePath(path);
 }
 
 bool FileIgnoreProxy::setFilterState(QModelIndex index, Qt::CheckState state)
@@ -146,18 +145,18 @@ bool FileIgnoreProxy::setFilterState(QModelIndex index, Qt::CheckState state)
     bool changed = false;
     if (state == Qt::Unchecked) {
         // blocking a path
-        auto& node = blocked.insert(blockedPath);
+        auto& node = m_blocked.insert(blockedPath);
         // get rid of all blocked nodes below
         node.clear();
         changed = true;
     } else if (state == Qt::Checked || state == Qt::PartiallyChecked) {
-        if (!blocked.remove(blockedPath)) {
-            auto cover = blocked.cover(blockedPath);
+        if (!m_blocked.remove(blockedPath)) {
+            auto cover = m_blocked.cover(blockedPath);
             qDebug() << "Blocked by cover" << cover;
             // uncover
-            blocked.remove(cover);
+            m_blocked.remove(cover);
             // block all contents, except for any cover
-            QModelIndex rootIndex = fsm->index(FS::PathCombine(root, cover));
+            QModelIndex rootIndex = fsm->index(FS::PathCombine(m_root, cover));
             QModelIndex doing = rootIndex;
             int row = 0;
             QStack<QModelIndex> todo;
@@ -179,7 +178,7 @@ bool FileIgnoreProxy::setFilterState(QModelIndex index, Qt::CheckState state)
                     todo.push(node);
                 } else {
                     // or just block this one.
-                    blocked.insert(relpath);
+                    m_blocked.insert(relpath);
                 }
                 row++;
             }
@@ -229,7 +228,7 @@ bool FileIgnoreProxy::shouldExpand(QModelIndex index)
         return false;
     }
     auto blockedPath = relPath(fsm->filePath(sourceIndex));
-    auto found = blocked.find(blockedPath);
+    auto found = m_blocked.find(blockedPath);
     if (found) {
         return !found->leaf();
     }
@@ -239,8 +238,8 @@ bool FileIgnoreProxy::shouldExpand(QModelIndex index)
 void FileIgnoreProxy::setBlockedPaths(QStringList paths)
 {
     beginResetModel();
-    blocked.clear();
-    blocked.insert(paths);
+    m_blocked.clear();
+    m_blocked.insert(paths);
     endResetModel();
 }
 
@@ -272,5 +271,30 @@ bool FileIgnoreProxy::ignoreFile(QFileInfo fileInfo) const
 
 bool FileIgnoreProxy::filterFile(const QString& fileName) const
 {
-    return blocked.covers(fileName) || ignoreFile(QFileInfo(QDir(root), fileName));
+    return m_blocked.covers(fileName) || ignoreFile(QFileInfo(QDir(m_root), fileName));
+}
+
+void FileIgnoreProxy::loadBlockedPathsFromFile(const QString& fileName)
+{
+    QFile ignoreFile(fileName);
+    if (!ignoreFile.open(QIODevice::ReadOnly)) {
+        return;
+    }
+    auto ignoreData = ignoreFile.readAll();
+    auto string = QString::fromUtf8(ignoreData);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    setBlockedPaths(string.split('\n', Qt::SkipEmptyParts));
+#else
+    setBlockedPaths(string.split('\n', QString::SkipEmptyParts));
+#endif
+}
+
+void FileIgnoreProxy::saveBlockedPathsToFile(const QString& fileName)
+{
+    auto ignoreData = blockedPaths().toStringList().join('\n').toUtf8();
+    try {
+        FS::write(fileName, ignoreData);
+    } catch (const Exception& e) {
+        qWarning() << e.cause();
+    }
 }

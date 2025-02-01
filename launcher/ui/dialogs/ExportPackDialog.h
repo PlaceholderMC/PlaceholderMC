@@ -41,9 +41,12 @@ class ExportPackDialog : public QDialog {
     void validate();
 
    private:
-    const InstancePtr instance;
-    Ui::ExportPackDialog* ui;
-    FileIgnoreProxy* proxy;
-    FastFileIconProvider icons;
+    QString ignoreFileName();
+
+   private:
+    const InstancePtr m_instance;
+    Ui::ExportPackDialog* m_ui;
+    FileIgnoreProxy* m_proxy;
+    FastFileIconProvider m_icons;
     const ModPlatform::ResourceProvider m_provider;
 };
