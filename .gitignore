@@ -53,6 +53,7 @@ result
 # Flatpak
 .flatpak-builder
 flatbuild
+org.prismlauncher.PrismLauncher.flatpak
 
 # Snap
 *.snap
