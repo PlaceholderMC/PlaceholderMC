@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
  *  Prism Launcher - Minecraft Launcher
- *  Copyright (c) 2023 Trial97 <alexandru.tripon97@gmail.com>
+ *  Copyright (c) 2023-2024 Trial97 <alexandru.tripon97@gmail.com>
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,17 +24,21 @@
 
 #include "minecraft/auth/MinecraftAccount.h"
 #include "minecraft/skins/SkinList.h"
+#include "minecraft/skins/SkinModel.h"
+#include "ui/dialogs/skins/draw/SkinOpenGLWindow.h"
 
 namespace Ui {
 class SkinManageDialog;
 }
-
-class SkinManageDialog : public QDialog {
+class SkinManageDialog : public QDialog, public SkinProvider {
     Q_OBJECT
    public:
     explicit SkinManageDialog(QWidget* parent, MinecraftAccountPtr acct);
     virtual ~SkinManageDialog();
     void resizeEvent(QResizeEvent* event) override;
+
+    virtual SkinModel* getSelectedSkin() override;
+    virtual QHash<QString, QImage> capes() override;
 
    public slots:
     void selectionChanged(QItemSelection, QItemSelection);
@@ -56,10 +60,12 @@ class SkinManageDialog : public QDialog {
    private:
     void setupCapes();
 
+   private:
     MinecraftAccountPtr m_acct;
-    Ui::SkinManageDialog* ui;
+    Ui::SkinManageDialog* m_ui;
     SkinList m_list;
-    QString m_selected_skin;
-    QHash<QString, QPixmap> m_capes;
-    QHash<QString, int> m_capes_idx;
+    QString m_selectedSkinKey;
+    QHash<QString, QImage> m_capes;
+    QHash<QString, int> m_capesIdx;
+    SkinOpenGLWindow* m_skinPreview = nullptr;
 };
