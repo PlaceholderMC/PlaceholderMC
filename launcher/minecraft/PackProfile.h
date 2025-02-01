@@ -164,6 +164,8 @@ class PackProfile : public QAbstractListModel {
     /// apply the component patches. Catches all the errors and returns true/false for success/failure
     void invalidateLaunchProfile();
 
+    void updateLatesMinecraft();
+
    private:
     void scheduleSave();
     bool saveIsScheduled() const;
