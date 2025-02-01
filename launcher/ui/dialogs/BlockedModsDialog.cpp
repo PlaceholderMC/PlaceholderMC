@@ -43,21 +43,18 @@
 #include <QTimer>
 
 BlockedModsDialog::BlockedModsDialog(QWidget* parent, const QString& title, const QString& text, QList<BlockedMod>& mods, QString hash_type)
-    : QDialog(parent), ui(new Ui::BlockedModsDialog), m_mods(mods), m_hash_type(hash_type)
+    : QDialog(parent), ui(new Ui::BlockedModsDialog), m_mods(mods), m_hashType(hash_type)
 {
-    m_hashing_task = shared_qobject_ptr<ConcurrentTask>(
+    m_hashingTask = shared_qobject_ptr<ConcurrentTask>(
         new ConcurrentTask("MakeHashesTask", APPLICATION->settings()->get("NumberOfConcurrentTasks").toInt()));
-    connect(m_hashing_task.get(), &Task::finished, this, &BlockedModsDialog::hashTaskFinished);
+    connect(m_hashingTask.get(), &Task::finished, this, &BlockedModsDialog::hashTaskFinished);
 
     ui->setupUi(this);
 
     ui->buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
     ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
-    m_openMissingButton = ui->buttonBox->addButton(tr("Open Missing"), QDialogButtonBox::ActionRole);
-    connect(m_openMissingButton, &QPushButton::clicked, this, [this]() { openAll(true); });
-
-    auto downloadFolderButton = ui->buttonBox->addButton(tr("Add Download Folder"), QDialogButtonBox::ActionRole);
-    connect(downloadFolderButton, &QPushButton::clicked, this, &BlockedModsDialog::addDownloadFolder);
+    connect(ui->openMissingButton, &QPushButton::clicked, this, [this]() { openAll(true); });
+    connect(ui->downloadFolderButton, &QPushButton::clicked, this, &BlockedModsDialog::addDownloadFolder);
 
     connect(&m_watcher, &QFileSystemWatcher::directoryChanged, this, &BlockedModsDialog::directoryChanged);
 
@@ -174,10 +171,12 @@ void BlockedModsDialog::update()
 
     if (allModsMatched()) {
         ui->labelModsFound->setText("<span style=\"color:green\">✔</span>" + tr("All mods found"));
-        m_openMissingButton->setDisabled(true);
+        ui->openMissingButton->setDisabled(true);
+        ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("OK"));
     } else {
         ui->labelModsFound->setText(tr("Please download the missing mods."));
-        m_openMissingButton->setDisabled(false);
+        ui->openMissingButton->setDisabled(false);
+        ui->buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Skip"));
     }
 }
 
@@ -260,7 +259,7 @@ void BlockedModsDialog::scanPath(QString path, bool start_task)
 void BlockedModsDialog::addHashTask(QString path)
 {
     qDebug() << "[Blocked Mods Dialog] adding a Hash task for" << path << "to the pending set.";
-    m_pending_hash_paths.insert(path);
+    m_pendingHashPaths.insert(path);
 }
 
 /// @brief add a hashing task for the file located at path and connect it to check that hash against
@@ -268,14 +267,14 @@ void BlockedModsDialog::addHashTask(QString path)
 /// @param path the path to the local file being hashed
 void BlockedModsDialog::buildHashTask(QString path)
 {
-    auto hash_task = Hashing::createHasher(path, m_hash_type);
+    auto hash_task = Hashing::createHasher(path, m_hashType);
 
     qDebug() << "[Blocked Mods Dialog] Creating Hash task for path: " << path;
 
     connect(hash_task.get(), &Task::succeeded, this, [this, hash_task, path] { checkMatchHash(hash_task->getResult(), path); });
     connect(hash_task.get(), &Task::failed, this, [path] { qDebug() << "Failed to hash path: " << path; });
 
-    m_hashing_task->addTask(hash_task);
+    m_hashingTask->addTask(hash_task);
 }
 
 /// @brief check if the computed hash for the provided path matches a blocked
@@ -406,31 +405,31 @@ void BlockedModsDialog::validateMatchedMods()
 /// @brief run hash task or mark a pending run if it is already running
 void BlockedModsDialog::runHashTask()
 {
-    if (!m_hashing_task->isRunning()) {
-        m_rehash_pending = false;
+    if (!m_hashingTask->isRunning()) {
+        m_rehashPending = false;
 
-        if (!m_pending_hash_paths.isEmpty()) {
+        if (!m_pendingHashPaths.isEmpty()) {
             qDebug() << "[Blocked Mods Dialog] there are pending hash tasks, building and running tasks";
 
-            auto path = m_pending_hash_paths.begin();
-            while (path != m_pending_hash_paths.end()) {
+            auto path = m_pendingHashPaths.begin();
+            while (path != m_pendingHashPaths.end()) {
                 buildHashTask(*path);
-                path = m_pending_hash_paths.erase(path);
+                path = m_pendingHashPaths.erase(path);
             }
 
-            m_hashing_task->start();
+            m_hashingTask->start();
         }
     } else {
         qDebug() << "[Blocked Mods Dialog] queueing another run of the hashing task";
-        qDebug() << "[Blocked Mods Dialog] pending hash tasks:" << m_pending_hash_paths;
-        m_rehash_pending = true;
+        qDebug() << "[Blocked Mods Dialog] pending hash tasks:" << m_pendingHashPaths;
+        m_rehashPending = true;
     }
 }
 
 void BlockedModsDialog::hashTaskFinished()
 {
     qDebug() << "[Blocked Mods Dialog] All hash tasks finished";
-    if (m_rehash_pending) {
+    if (m_rehashPending) {
         qDebug() << "[Blocked Mods Dialog] task finished with a rehash pending, rerunning";
         runHashTask();
     }

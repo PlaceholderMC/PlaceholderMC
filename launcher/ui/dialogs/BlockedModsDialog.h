@@ -70,11 +70,10 @@ class BlockedModsDialog : public QDialog {
     Ui::BlockedModsDialog* ui;
     QList<BlockedMod>& m_mods;
     QFileSystemWatcher m_watcher;
-    shared_qobject_ptr<ConcurrentTask> m_hashing_task;
-    QSet<QString> m_pending_hash_paths;
-    bool m_rehash_pending;
-    QPushButton* m_openMissingButton;
-    QString m_hash_type;
+    shared_qobject_ptr<ConcurrentTask> m_hashingTask;
+    QSet<QString> m_pendingHashPaths;
+    bool m_rehashPending;
+    QString m_hashType;
 
     void openAll(bool missingOnly);
     void addDownloadFolder();
