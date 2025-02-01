@@ -49,6 +49,7 @@
 #include <QtMath>
 
 #include "VisualGroup.h"
+#include "ui/themes/CatPainter.h"
 #include "ui/themes/ThemeManager.h"
 
 #include <Application.h>
@@ -78,6 +79,9 @@ InstanceView::~InstanceView()
 {
     qDeleteAll(m_groups);
     m_groups.clear();
+    if (m_cat) {
+        m_cat->deleteLater();
+    }
 }
 
 void InstanceView::setModel(QAbstractItemModel* model)
@@ -172,7 +176,7 @@ void InstanceView::updateScrollbar()
 
 void InstanceView::updateGeometries()
 {
-    geometryCache.clear();
+    m_geometryCache.clear();
 
     QMap<LocaleString, VisualGroup*> cats;
 
@@ -186,8 +190,8 @@ void InstanceView::updateGeometries()
                 cat->update();
             } else {
                 auto cat = new VisualGroup(groupName, this);
-                if (fVisibility) {
-                    cat->collapsed = fVisibility(groupName);
+                if (m_fVisibility) {
+                    cat->collapsed = m_fVisibility(groupName);
                 }
                 cats.insert(groupName, cat);
                 cat->update();
@@ -444,11 +448,15 @@ void InstanceView::mouseDoubleClickEvent(QMouseEvent* event)
 
 void InstanceView::setPaintCat(bool visible)
 {
-    m_catVisible = visible;
-    if (visible)
-        m_catPixmap.load(APPLICATION->themeManager()->getCatPack());
-    else
-        m_catPixmap = QPixmap();
+    if (m_cat) {
+        disconnect(m_cat, &CatPainter::updateFrame, this, nullptr);
+        delete m_cat;
+        m_cat = nullptr;
+    }
+    if (visible) {
+        m_cat = new CatPainter(APPLICATION->themeManager()->getCatPack(), this);
+        connect(m_cat, &CatPainter::updateFrame, this, [this] { viewport()->update(); });
+    }
 }
 
 void InstanceView::paintEvent([[maybe_unused]] QPaintEvent* event)
@@ -457,19 +465,8 @@ void InstanceView::paintEvent([[maybe_unused]] QPaintEvent* event)
 
     QPainter painter(this->viewport());
 
-    if (m_catVisible) {
-        painter.setOpacity(APPLICATION->settings()->get("CatOpacity").toFloat() / 100);
-        int widWidth = this->viewport()->width();
-        int widHeight = this->viewport()->height();
-        if (m_catPixmap.width() < widWidth)
-            widWidth = m_catPixmap.width();
-        if (m_catPixmap.height() < widHeight)
-            widHeight = m_catPixmap.height();
-        auto pixmap = m_catPixmap.scaled(widWidth, widHeight, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        QRect rectOfPixmap = pixmap.rect();
-        rectOfPixmap.moveBottomRight(this->viewport()->rect().bottomRight());
-        painter.drawPixmap(rectOfPixmap.topLeft(), pixmap);
-        painter.setOpacity(1.0);
+    if (m_cat) {
+        m_cat->paint(&painter, this->viewport()->rect());
     }
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -723,8 +720,8 @@ QRect InstanceView::geometryRect(const QModelIndex& index) const
     }
 
     int row = index.row();
-    if (geometryCache.contains(row)) {
-        return *geometryCache[row];
+    if (m_geometryCache.contains(row)) {
+        return *m_geometryCache[row];
     }
 
     const VisualGroup* cat = category(index);
@@ -743,7 +740,7 @@ QRect InstanceView::geometryRect(const QModelIndex& index) const
     out.setTop(cat->verticalPosition() + cat->headerHeight() + 5 + cat->rowTopOf(index));
     out.setLeft(m_spacing + x * (itemWidth() + m_spacing));
     out.setSize(itemDelegate()->sizeHint(option, index));
-    geometryCache.insert(row, new QRect(out));
+    m_geometryCache.insert(row, new QRect(out));
     return out;
 }
 
