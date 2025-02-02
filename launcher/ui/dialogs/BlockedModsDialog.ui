@@ -6,20 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>400</height>
+    <width>800</width>
+    <height>500</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+    <horstretch>2</horstretch>
+    <verstretch>1</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
-    <width>0</width>
+    <width>700</width>
     <height>350</height>
    </size>
   </property>
   <property name="windowTitle">
    <string notr="true">BlockedModsDialog</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,3,0,1,0">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,0,0,0">
    <item>
     <widget class="QLabel" name="labelDescription">
      <property name="text">
@@ -36,47 +42,72 @@
    <item>
     <widget class="QLabel" name="labelExplain">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Your configured global mods folder and default downloads folder are automatically checked for the downloaded mods and they will be copied to the instance if found.&lt;/p&gt;&lt;p&gt;Optionally, you may drag and drop the downloaded mods onto this dialog or add a folder to watch if you did not download the mods to a default location.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Your configured global mods folder and default downloads folder are automatically checked for the downloaded mods and they will be copied to the instance if found.&lt;/p&gt;&lt;p&gt;Optionally, you may drag and drop the downloaded mods onto this dialog or add a folder to watch if you did not download the mods to a default location.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Click 'Open Missing' to open all the download links in the browser. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
      </property>
-     <property name="openExternalLinks">
-      <bool>true</bool>
-     </property>
     </widget>
    </item>
    <item>
-    <widget class="QTextBrowser" name="textBrowserModsListing">
-     <property name="acceptRichText">
-      <bool>true</bool>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
-     <property name="openExternalLinks">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLabel" name="labelWatched">
-     <property name="text">
-      <string>Watched Folders:</string>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QTextBrowser" name="textBrowserWatched">
-     <property name="baseSize">
-      <size>
-       <width>0</width>
-       <height>12</height>
-      </size>
-     </property>
-     <property name="openExternalLinks">
-      <bool>true</bool>
-     </property>
-     <property name="openLinks">
-      <bool>false</bool>
-     </property>
+     <widget class="QWidget" name="tab">
+      <attribute name="title">
+       <string>Blocked Mods</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QTextBrowser" name="textBrowserModsListing">
+         <property name="acceptRichText">
+          <bool>true</bool>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="openMissingButton">
+         <property name="text">
+          <string>Open Missing</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Watched Folders:</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QTextBrowser" name="textBrowserWatched">
+         <property name="baseSize">
+          <size>
+           <width>0</width>
+           <height>12</height>
+          </size>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+         <property name="openLinks">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="downloadFolderButton">
+         <property name="text">
+          <string>Add Download Folder</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
