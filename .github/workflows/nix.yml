@@ -77,12 +77,54 @@ jobs:
         run: |
           nix flake check --print-build-logs --show-trace
 
-      - name: Build debug package
+      - name: Select debug package
         if: ${{ env.DEBUG }}
         run: |
-          nix build --print-build-logs .#prismlauncher-debug
+          echo "installable='.#prismlauncher-debug'" >> "$GITHUB_ENV"
 
-      - name: Build release package
+      - name: Select release package
         if: ${{ !env.DEBUG }}
         run: |
-          nix build --print-build-logs .#prismlauncher
+          echo "installable='.#prismlauncher'" >> "$GITHUB_ENV"
+
+      - name: Build package
+        run: |
+          nix build \
+            --no-link --print-build-logs --print-out-paths \
+            "$installable" >> "$RUNNER_TEMP"/out-paths
+
+      - name: Upload out paths
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.system }}-out-paths
+          path: ${{ runner.temp }}/out-paths
+
+  release-gate:
+    name: Release gate
+
+    if: ${{ always() }}
+    needs: [ build ]
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Recover out paths
+        uses: actions/download-artifact@v4
+
+      - name: Make job summary
+        run: |
+          {
+            for artifact in *-out-paths/; do
+              basename="$(basename "$artifact")"
+              echo "# ${basename/%-out-paths/}"
+              echo
+              echo '```'
+              cat "$artifact"/out-paths
+              echo '```'
+              echo
+            done
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Exit with error
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
