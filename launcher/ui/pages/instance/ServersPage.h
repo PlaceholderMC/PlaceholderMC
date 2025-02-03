@@ -85,6 +85,7 @@ class ServersPage : public QMainWindow, public BasePage {
     void on_actionMove_Up_triggered();
     void on_actionMove_Down_triggered();
     void on_actionJoin_triggered();
+    void on_actionRefresh_triggered();
 
     void runningStateChanged(bool running);
 
